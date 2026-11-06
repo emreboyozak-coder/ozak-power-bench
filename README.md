@@ -1,35 +1,36 @@
-# OZAK POWER — DC/DC Modül Test Bench
+# OZAK POWER — DC/DC Module Test Bench
 
-Beş röle yuvasına takılan izole DC/DC dönüştürücüleri sırayla test eden, ölçümleri tarayıcıya aktaran ve Excel/CSV raporları üreten Python tabanlı test sistemi.
+A Python-based test system that sequentially tests isolated DC/DC converters installed in five relay-selected slots, streams measurements to a browser, and generates Excel and CSV reports.
 
-Sistem; UNI-T UDP6731 güç kaynağını, UNI-T UTL8511 elektronik yükü ve Arduino Uno röle seçicisini koordine eder. Aynı arayüzde donanımdan bağımsız simülasyon ve katalog karşılaştırmalı verimlilik grafikleri bulunur.
+The system coordinates a UNI-T UDP6731 power supply, a UNI-T UTL8511 electronic load, and an Arduino Uno relay selector. The interface also provides hardware-independent simulation and efficiency graphs with catalog reference values.
 
-## İçindekiler
+## Contents
 
-- [Kurulum ve çalıştırma](#kurulum-ve-çalıştırma)
-- [Donanım ve yuva düzeni](#donanım-ve-yuva-düzeni)
-- [Arayüz ve çalışma modları](#arayüz-ve-çalışma-modları)
-- [Modül belirleme](#modül-belirleme)
-- [Otomatik test prosedürü](#otomatik-test-prosedürü)
-- [Güç ve akım sınırları](#güç-ve-akım-sınırları)
-- [Verimlilik eğrisi](#verimlilik-eğrisi)
-- [Ölçüm ve regulation hesapları](#ölçüm-ve-regulation-hesapları)
-- [Excel ve CSV raporları](#excel-ve-csv-raporları)
-- [Kalibrasyon](#kalibrasyon)
-- [Kod mimarisi](#kod-mimarisi)
+- [Installation and startup](#installation-and-startup)
+- [Hardware and slot layout](#hardware-and-slot-layout)
+- [Interface and operating modes](#interface-and-operating-modes)
+- [Module identification](#module-identification)
+- [Automatic test procedure](#automatic-test-procedure)
+- [Power and current limits](#power-and-current-limits)
+- [Efficiency curve](#efficiency-curve)
+- [Measurement and regulation calculations](#measurement-and-regulation-calculations)
+- [Excel and CSV reports](#excel-and-csv-reports)
+- [Calibration](#calibration)
+- [Code architecture](#code-architecture)
 - [API](#api)
-- [Sorun giderme ve mevcut sınırlar](#sorun-giderme-ve-mevcut-sınırlar)
+- [Troubleshooting and current limitations](#troubleshooting-and-current-limitations)
+- [Local files excluded from Git](#local-files-excluded-from-git)
 
-## Kurulum ve çalıştırma
+## Installation and startup
 
-### Gereksinimler
+### Requirements
 
-- Python 3.10 veya üzeri; kodda `X | None` tür gösterimi kullanılır.
-- `requirements.txt`: FastAPI, Uvicorn, WebSockets, pyserial, Pydantic 2 ve openpyxl.
-- Gerçek test için güç kaynağı, elektronik yük, Arduino ve seri/USB bağlantıları.
-- Modern bir tarayıcı. Ayrı Node.js derleme aşaması yoktur.
+- Python 3.10 or later; the code uses the `X | None` type annotation syntax.
+- Packages in `requirements.txt`: FastAPI, Uvicorn, WebSockets, pyserial, Pydantic 2, and openpyxl.
+- For hardware testing: the PSU, electronic load, Arduino, and serial/USB connections.
+- A modern browser. There is no separate Node.js build step.
 
-Proje klasöründe PowerShell açın:
+Open PowerShell in the project directory:
 
 ```powershell
 python -m venv .venv
@@ -37,222 +38,224 @@ python -m venv .venv
 .\.venv\Scripts\python.exe main.py
 ```
 
-Arayüz: **http://localhost:8000**
+Web interface: **http://localhost:8000**
 
-Paketler kullandığınız Python'a kuruluysa `python main.py` veya `run.bat` kullanılabilir. `run.bat`, PATH üzerindeki `python` komutunu kullanır; sanal ortam kullanıyorsanız önce ortamı etkinleştirin veya yukarıdaki tam yolu kullanın.
+If the packages are already installed for your Python interpreter, use `python main.py` or `run.bat`. The batch file uses the `python` command on PATH. When using a virtual environment, activate it first or use the explicit interpreter path shown above.
 
-Sunucuyu terminalde `Ctrl+C` ile durdurabilirsiniz. Enerjili bir test varsa önce **ACİL STOP** kullanın. Sunucu `reload=False` ile açılır; Python değişiklikleri yeniden başlatma, HTML/JavaScript değişiklikleri genellikle `Ctrl+F5` gerektirir.
+Stop the server with `Ctrl+C` in its terminal. If a test is energized, use **Emergency Stop** in the interface first. The server runs with `reload=False`: Python changes require a restart, while HTML/JavaScript changes generally require a browser refresh with `Ctrl+F5`.
 
-### Yapılandırma
+### Configuration
 
-[backend/config.py](backend/config.py) içindeki varsayılanlar:
+Defaults in [backend/config.py](backend/config.py):
 
-| Ayar | Değer | Anlamı |
+| Setting | Value | Purpose |
 |---|---|---|
-| `HOST` | `0.0.0.0` | Dinlenen ağ arayüzü |
-| `PORT` | `8000` | HTTP / WebSocket portu |
-| `PSU_PORT` | `COM16` | UDP6731 portu |
-| `UTL_PORT` | `COM11` | UTL8511 portu |
-| `RELAY_PORT` | `COM14` | Arduino portu |
-| Baud hızları | `9600` | Seri iletişim hızları |
-| `SAMPLE_INTERVAL_SEC` | `0.250` | Normal telemetri döngüsünün bekleme aralığı |
-| `PSU_TEST_CURRENT_LIMIT_A` | `12.0` | Üst giriş akımı sınırı |
-| `LOAD_TEST_MAX_CURRENT_A` | `30.0` | Üst yük akımı sınırı |
-| `INITIAL_MODE` | `HARDWARE` | Başlangıç modu |
+| `HOST` | `0.0.0.0` | Network interface to listen on |
+| `PORT` | `8000` | HTTP / WebSocket port |
+| `PSU_PORT` | `COM16` | UDP6731 serial port |
+| `UTL_PORT` | `COM11` | UTL8511 serial port |
+| `RELAY_PORT` | `COM14` | Arduino serial port |
+| Baud rates | `9600` | Serial communication speeds |
+| `SAMPLE_INTERVAL_SEC` | `0.250` | Delay between normal telemetry cycles |
+| `PSU_TEST_CURRENT_LIMIT_A` | `12.0` | Maximum input current allowed by the software |
+| `LOAD_TEST_MAX_CURRENT_A` | `30.0` | Maximum electronic-load current allowed by the software |
+| `INITIAL_MODE` | `HARDWARE` | Initial operating mode |
 
-COM numaraları bilgisayara ve USB bağlantısına göre değişir:
+COM assignments depend on the computer and USB connections:
 
 ```powershell
 python -m serial.tools.list_ports -v
 ```
 
-`/api/ports/ensure`, cihaz kimliklerini doğrular ve gerekirse yeniden arar. Çalışma anındaki port seçimi ile başlangıç dosyası ayrıdır; kalıcı değişiklikte `config.py` dosyasını da güncelleyin. Arduino portu PSU ve yük için kullanılmaz.
+`/api/ports/ensure` verifies instrument identities and searches again when necessary. Runtime port selection and startup configuration are separate; update `config.py` as well when making a permanent change. The Arduino port must not be assigned to the PSU or load.
 
-Arayüzün Tailwind stil betiği dış bir adresten yüklenir. Tam çevrimdışı kullanımda bu kaynağın da yerel olarak sağlanması gerekir.
+The interface loads its Tailwind styling script from an external address. Fully offline operation requires providing that resource locally too.
 
-## Donanım ve yuva düzeni
+## Hardware and slot layout
 
 ```text
                   Arduino Uno
-                  röle seçici
+                  relay selector
                        |
-UDP6731 PSU ---> seçilen DC/DC modülü ---> UTL8511 elektronik yük
+UDP6731 PSU ---> selected DC/DC module ---> UTL8511 electronic load
      |                                         |
-     +-------------- Python sunucusu -----------+
+     +-------------- Python server ------------+
                             |
                        WebSocket
                             |
-                       Web arayüzü
+                       Web interface
 ```
 
-Bench ve ekran yerleşimi:
+The bench and on-screen layout use the same arrangement:
 
 ```text
-     [ YUVA 5 ]          [ YUVA 4 ]
+     [ SLOT 5 ]          [ SLOT 4 ]
 
-                [ YUVA 3 ]
+                [ SLOT 3 ]
 
-     [ YUVA 1 ]          [ YUVA 2 ]
+     [ SLOT 1 ]          [ SLOT 2 ]
 ```
 
-| Yuva | Konum | Arduino pini | Seri maske |
+| Slot | Position | Arduino pin | Serial mask |
 |---|---|---|---|
-| 1 | Sol alt | D2 | `10000` |
-| 2 | Sağ alt | D3 | `01000` |
-| 3 | Orta | D4 | `00100` |
-| 4 | Sağ üst | D5 | `00010` |
-| 5 | Sol üst | D6 | `00001` |
-| Tümü kapalı | — | — | `00000` |
+| 1 | Bottom left | D2 | `10000` |
+| 2 | Bottom right | D3 | `01000` |
+| 3 | Center | D4 | `00100` |
+| 4 | Top right | D5 | `00010` |
+| 5 | Top left | D6 | `00001` |
+| All off | — | — | `00000` |
 
-### Arduino yazılımı
+### Arduino firmware
 
-[arduino/relay_selector/relay_selector.ino](arduino/relay_selector/relay_selector.ino) dosyasını Uno'ya yükleyin. Arduino IDE veya [platformio.ini](platformio.ini) yapılandırmasını kullanabilirsiniz.
+Upload [arduino/relay_selector/relay_selector.ino](arduino/relay_selector/relay_selector.ino) to the Uno. Use the Arduino IDE or the [platformio.ini](platformio.ini) configuration.
 
-- 9600 baud; beş bitlik maske ve satır sonu `\n` gönderilir.
-- Başarılı yanıt, gönderilen maskeyi içerir: örneğin `OK 00100`.
-- Birden çok yuva seçen maske reddedilir ve röleler kapatılır.
-- Firmware başlangıçta tüm röleleri kapatır; yuva değişiminde önce önceki röleleri bırakır.
-- `RELAY_ACTIVE_HIGH = true` varsayılandır. Aktif düşük kartta `false` yapın.
-- Python röle değiştirmeden önce PSU'yu kapatır. Görsel vurgu, seçim listesini değil onaylanan aktif yuvayı izler.
+- Communication uses 9600 baud, a five-bit mask, and a newline terminator (`\n`).
+- A successful response includes the requested mask, such as `OK 00100`.
+- A mask selecting more than one slot is rejected, and the relays are switched off.
+- The firmware switches all relays off at startup and releases the previous relay before selecting another slot.
+- `RELAY_ACTIVE_HIGH = true` is the default. Set it to `false` for an active-low relay board.
+- Python disables the PSU before changing relays. The visual highlight follows the acknowledged active slot, rather than the selection list.
 
-## Arayüz ve çalışma modları
+## Interface and operating modes
 
-### Test modu
+### Test mode
 
-Gerçek cihazları kullanır. PSU bağlantısı kurulurken çıkış kapatılır. Gerilim ayarlamak tek başına çıkışı açmaz; açma komutu ayrıca gönderilir.
+Uses the physical instruments. The PSU output is disabled when its connection is established. Programming a voltage does not enable the output; a separate enable command is required.
 
-### Simülasyon modu
+### Simulation mode
 
-Üstteki **Simülasyon / Test** düğmesiyle seçilir. `ConverterSimulator`, sanal giriş/çıkış ve kayıp değerleri üretir. Normal simülasyon telemetrisi ve manuel simülasyon kontrolleri gerçek PSU/yük okumalarını veya çıkış komutlarını kullanmaz.
+Select this mode with the **Simulation / Test** button in the top bar. `ConverterSimulator` generates virtual input, output, and loss values. Normal simulation telemetry and manual simulation controls do not read the physical PSU/load or send output commands to them.
 
-Donanımdan simülasyona geçişte bağlı çıkışlar ve seçili röle kapatılır. Test/kalibrasyon sürerken mod değiştirilemez. Donanıma dönüşte çıkışlar kapalı tutulur. Simülasyonda sayısal göstergeler yaklaşık 300 ms'lik yumuşak geçişlerle güncellenir; test modundaki ölçümlere görsel ara değer eklenmez.
+Switching from hardware to simulation disables connected outputs and releases the selected relay. Mode changes are blocked during a test or calibration. Outputs remain off when returning to hardware mode. Simulation numbers use smooth transitions of approximately 300 ms; hardware-mode measurements are displayed without interpolated intermediate values.
 
-Otomatik donanım testleri ve modül belirlemeli verimlilik taraması `HARDWARE` modu gerektirir. Simülasyon bu üretim testlerinin fiziksel doğrulaması değildir.
+Automatic hardware tests and the efficiency sweep with module identification require `HARDWARE` mode. Simulation is not physical validation of these production tests.
 
-### Kontroller
+### Controls
 
-| Kontrol | İşlev |
+The application currently uses Turkish labels. The table below includes those labels so the controls can be located in the interface.
+
+| Control | Purpose |
 |---|---|
-| `YUVA` | Manuel açma ve tek yuva testi için seçim. Listeyi değiştirmek enerjili röleyi anında değiştirmez. |
-| `GÜÇ (W)` | START TEST / TEST YUVA için 20, 50, 100 veya 300 W ailesi. |
-| `GİRİŞ` | Manuel açılışta yük/PSU'yu kapatır, seçili röleyi onaylatır, akım sınırını ayarlar ve **24 V** açar. |
-| `ÇIKIŞ` | Elektronik yük girişini açar/kapatır. Akım için hedef de sıfırdan büyük olmalıdır. |
-| Akım sürgüsü ve ± butonları | Manuel CC yük hedefini amper cinsinden değiştirir. |
-| `START TEST` | Beş yuvada sırayla belirleme ve performans testi. |
-| `TEST YUVA` | Seçilen tek yuvada aynı belirleme ve altı noktalı prosedür. |
-| `ACİL STOP` | PSU/yükü kapatır, yükü sıfırlar, röleleri bırakır ve testi iptal eder. Yeniden açmayı kilitler; yeni test akışı kilidi temizleyebilir. |
-| Kalibrasyon ayarları | Normalde kapalı, gerektiğinde açılan panel. |
+| Slot (`YUVA`) | Selects a slot for manual power-on and single-slot testing. Changing the list does not immediately switch an energized relay. |
+| Power (`GÜÇ (W)`) | Selects the 20, 50, 100, or 300 W family for START TEST / TEST SLOT. |
+| Input (`GİRİŞ`) | During manual power-on, disables the load/PSU, obtains relay acknowledgement, sets the current limit, and enables **24 V**. |
+| Output (`ÇIKIŞ`) | Enables/disables the electronic-load input. A nonzero current target is also needed to draw current. |
+| Current slider and ± buttons | Adjust the manual constant-current (CC) load target in amperes. |
+| `START TEST` | Runs identification and performance tests sequentially on all five slots. |
+| Test Slot (`TEST YUVA`) | Runs the same identification and six-point procedure on the selected slot. |
+| Emergency Stop (`ACİL STOP`) | Disables the PSU/load, zeros the load target, releases relays, and cancels the test. It latches a restart inhibit; a new test flow can clear the latch. |
+| Calibration settings | A panel that remains collapsed until needed. |
 
-Manuel akışta GİRİŞ ve ÇIKIŞ'ın ikisi de kapandığında röle bırakılır. Test/kalibrasyonun kontrol ettiği röleler kendi akışları tarafından yönetilir.
+In manual operation, the selected relay is released when both Input and Output are off. Relays controlled by a test or calibration are managed by their respective workflows.
 
-Yuva renkleri:
+Slot colors:
 
-- **Turkuaz:** Test ediliyor veya sonuç yokken röle seçili.
-- **Yeşil:** Çalışan / başarılı sonuç.
-- **Kırmızı:** Boş/çalışmayan yuva veya başarısız performans noktası.
-- **Sarı:** Belirsiz sonuç veya donanım kapasitesi nedeniyle tamamlanamayan tam yük testi.
+- **Cyan:** Currently under test, or relay selected with no result yet.
+- **Green:** Working / successful test result.
+- **Red:** Empty or nonworking slot, or a failed performance point.
+- **Amber:** Inconclusive result or a full-load test that cannot be completed within bench capacity.
 
-Renkler tarayıcı belleğinde tutulur; yeni ilgili test veya sayfa yenileme bunları temizleyebilir. Kalıcı kayıt için raporu saklayın. Vitrin görünümü kullanıcı tarafından açılır; otomatik üretim testi değildir.
+Colors are held in browser memory and may be cleared by a new related test or page refresh. Save the report for a permanent record. The showcase view is opened by the user and is not an automatic production test.
 
-## Modül belirleme
+## Module identification
 
-Operatör watt ailesini belirtir; yazılım o aile içinde giriş aralığı ve çıkış geriliminden katalog modeli tahmin eder.
+The operator specifies the power family. The software estimates the catalog model within that family using the input operating range and output voltage.
 
-1. PSU kapatılır; yük kapatılıp sıfırlanır ve yalnızca hedef röle seçilir.
-2. Modül önce **10 V**, sonra **24 V** ile, her noktada **50 mA** prob yüküyle ölçülür.
-3. Her noktada önce modül yüksüz başlatılır; sonra prob akımı ayarlanıp yük açılır.
-4. Akım ayarı `:CURR?`, açık/kapalı durum `:INP?` ile geri okunur. Gönderim/geri okuma başarısızsa işlem durur.
-5. Üç örneğin medyanı alınır. Giriş toleransı `max(1 V, hedefin %10'u)`; çıkış varlığı eşiği **2,5 V**'tur. Çalışma için en az **25 mA** prob akımı doğrulanır.
-6. 10 V'ta çalışan aday için 24 V nominal / 9–36 V ailesi değerlendirilir. 10 V giriş doğrulanmasına rağmen çıkış vermeyip 24 V'ta çalışan aday için 48 V nominal / 18–72 V ailesi değerlendirilir.
-7. Katalog çıkışına `max(0,5 V, katalog değerinin %5'i)` toleransında bakılır. Tek eşleşme yoksa yüksek yüklü performans matrisi çalıştırılmaz.
+1. Disable the PSU, disable and zero the load, and select only the target relay.
+2. Measure the module first at **10 V**, then at **24 V**, with a **50 mA** probe load at each point.
+3. Start the module unloaded at each voltage, then program the probe current and enable the load.
+4. Read back the current setting with `:CURR?` and input state with `:INP?`. A failed command or readback stops the procedure.
+5. Use the median of three samples. Input-voltage tolerance is `max(1 V, 10% of the setpoint)`; the output-presence threshold is **2.5 V**. At least **25 mA** of probe current must be confirmed for operation to be verified.
+6. A candidate operating at 10 V is evaluated as a 24 V nominal / 9–36 V family member. A candidate with verified 10 V input but no output, which operates at 24 V, is evaluated as a 48 V nominal / 18–72 V family member.
+7. Compare output voltage against catalog values using `max(0.5 V, 5% of the catalog value)`. If there is no unique match, the high-load performance matrix is not run.
 
-10 V'ta çalışmayan ama 24 V'ta çalışan modül sırf 10 V sonucuyla arızalı sayılmaz. Giriş doğrulanamaması veya çıkış olup prob akımının oluşmaması belirsiz kabul edilir.
+A module that does not operate at 10 V but operates at 24 V is not marked faulty solely because of the 10 V result. An unverified input, or output voltage without confirmed probe current, is treated as inconclusive.
 
-Bu işlem dijital kimlik okuma değildir. Aynı gerilim özelliklerine sahip modeller ayırt edilemeyebilir. Watt değeri bağımsız ölçülmez; yanlış aile yanlış eşleşmeye yol açabilir. Üretimde watt seçimi takılan modülle uyumlu olmalıdır.
+This is not a digital identity readout. Models with the same voltage characteristics may be indistinguishable. Rated power is not independently measured; an incorrect family can produce an incorrect match. In production, the selected power rating must correspond to the installed module.
 
-## Otomatik test prosedürü
+## Automatic test procedure
 
-Model tek bir katalog adayıyla eşleşince her yuva için **altı performans noktası** alınır:
+Once a unique catalog candidate is identified, the system records **six performance points** per slot:
 
-| PSU giriş noktası | Elektronik yük koşulları |
+| PSU input condition | Electronic-load conditions |
 |---|---|
-| Katalog minimum giriş | No load / yüksüz + full load / tam yük |
-| Katalog nominal giriş | No load / yüksüz + full load / tam yük |
-| Katalog maksimum giriş | No load / yüksüz + full load / tam yük |
+| Catalog minimum input voltage | No load + full load |
+| Catalog nominal input voltage | No load + full load |
+| Catalog maximum input voltage | No load + full load |
 
-**No load:** Hedef 0 A ve elektronik yük girişi kapalıdır. Sıfır ayarı ve kapalı giriş durumu geri okunur.
+**No load:** The current target is 0 A and the electronic-load input is disabled. Both the zero setting and disabled input state are read back.
 
-**Full load:** `min(katalog Imax, katalog güç / katalog çıkış gerilimi)` hedefi 1 mA çözünürlüğe aşağı yuvarlanır. Aynı akım üç girişte korunur. PSU/yük kapasitesi yetmezse nokta `skipped` olur; daha düşük yük “%100” diye raporlanmaz.
+**Full load:** The target is `min(catalog Imax, catalog power / catalog output voltage)`, rounded down to 1 mA resolution. The same current is maintained at all three input voltages. If PSU/load capacity is insufficient, the point is marked `skipped`; a lower load is not reported as “100%.”
 
-Bir noktanın geçmesi için giriş doğrulanmalı; çıkış gerilimi katalogdan `max(0,1 V, %5)` içinde olmalıdır. Tam yük akım farkı `max(5 mA, hedefin %5'i)` içinde; yüksüz akım ise en fazla 10 mA olmalıdır.
+For a point to pass, the input must be verified and output voltage must be within `max(0.1 V, 5% of the catalog output voltage)` of the catalog value. Full-load current error must be within `max(5 mA, 5% of the current target)`; no-load current must not exceed 10 mA.
 
-Testte normal telemetri okuyucusu duraklatılır ve seri portların paralel okunması engellenir. Test örnekleri WebSocket'e gönderilir; uzun oturma beklemelerinde de ölçüm/yayın sürer. İşlem sonunda PSU kapatılır ve röle yolları açılır.
+During testing, the normal telemetry reader is paused to avoid concurrent serial reads. Test samples are sent over WebSocket, and measurements continue during long settling waits. At the end, the PSU is disabled and relay paths are opened.
 
-## Güç ve akım sınırları
+## Power and current limits
 
-Giriş gücü bütçesi katalog çıkış gücünün **%150'sidir**:
+The input-power budget is **150% of the catalog output-power rating**:
 
 ```text
-Pin_budget = 1,5 × Pnom
+Pin_budget = 1.5 × Pnom
 Iin_limit = min(12 A, Pin_budget / Vin_setpoint)
 ```
 
-Akım sınırı 1 mA çözünürlüğe aşağı yuvarlanır. 20 W modülün bütçesi 30 W'tır:
+The current limit is rounded down to 1 mA resolution. For a 20 W module, the budget is 30 W:
 
-| PSU gerilimi | Akım sınırı |
+| PSU voltage | Current limit |
 |---|---|
 | 10 V | 3 A |
-| 24 V | 1,25 A |
-| 36 V | 0,833 A |
+| 24 V | 1.25 A |
+| 36 V | 0.833 A |
 
-Modülün sürekli 30 W tüketmesi sağlanmaz. PSU'ya sabit güç modu değil seçilen gerilime göre **akım sınırı** programlanır. Gerçek güç, gerçek gerilim ve modül/yük davranışına bağlıdır.
+This does not force the module to consume 30 W continuously. The PSU is programmed with a **current limit** based on the selected voltage, rather than a constant-power mode. Actual power depends on measured voltage and module/load behavior.
 
-Manuel açmada hesap üstteki katalog modeline; otomatik testte operatörün watt ailesi ve eşleşen modele dayanır. Yanlış yüksek watt seçimi elektriksel ölçümlerle kesin saptanamaz.
+Manual power-on uses the catalog model selected in the top bar. Automatic testing uses the operator-provided power family and the identified model. An incorrectly high power selection cannot be conclusively detected through these electrical measurements alone.
 
-## Verimlilik eğrisi
+## Efficiency curve
 
-Bu bölüm altı noktalı START TEST matrisinden ayrı bir güç taramasıdır.
+This section runs a power sweep separate from the six-point START TEST matrix.
 
-1. Bölümün kendi **YUVA** ve **MODÜL GÜCÜ (W)** alanlarını seçin.
-2. Başlangıç/bitiş/adım varsayılanı **5 / 20 / 5 W**'tır.
-3. Önce yalnızca seçilen yuvada 10 V / 24 V belirleme yapılır; bu aşamada tam yük matrisi tekrarlanmaz.
-4. Tek model eşleşince nominal giriş ve sınırlar katalogdan alınır. Model ve yuva grafik üstünde gösterilir.
-5. Varsayılan çıkış hedefleri **5 → 10 → 15 → 20 W**'tır. Bitiş hedefi katalog gücü/akımıyla sınırlanır.
-6. Her adımda ölçülen çıkıştan `I_target = P_target / Vout_measured` hesaplanıp CC akım komutu gönderilir. Bu sürekli geri beslemeli sabit güç modu değildir; gerçekleşen güç ayrıca ölçülür.
-7. En az 5 saniye oturma, yakınsama ve çoklu örnekleme yapılır. Beş verim örneğinin en düşük/en yüksek olanı ayıklanıp kalanlar ortalanır.
-8. Çıkış nominalin %85'inin altına düşerse, akım kapasitesi aşılırsa veya ölçülen giriş gücü %150 bütçesini aşarsa tarama durur.
+1. Select the section's own **Slot** and **Module Power (W)** fields.
+2. Default start/end/step values are **5 / 20 / 5 W**.
+3. Run 10 V / 24 V identification on only the selected slot. The full-load matrix is not repeated at this stage.
+4. Once a unique model is found, obtain nominal input voltage and limits from the catalog. Display the model and slot above the graph.
+5. Default output targets are **5 → 10 → 15 → 20 W**. The end target is capped by catalog power/current capability.
+6. At each step, calculate `I_target = P_target / Vout_measured` and send a CC current command. This is not continuously regulated constant-power mode; achieved output power is measured separately.
+7. Allow at least 5 seconds of settling, check convergence, and collect multiple samples. Remove the samples with the lowest and highest efficiency from five samples, then average the remaining samples.
+8. Stop if output voltage falls below 85% of nominal, current capability is exceeded, or measured input power exceeds the 150% budget.
 
-X ekseni çıkış gücü, Y ekseni verimdir. Kırmızı kesikli çizgi bulunan modelin katalog tipik verimidir; bir sertifikasyon limiti değildir. Grafik yüksekliği sabittir, sonuç tablosu kendi içinde kayar. CSV raporu bu bölümden indirilir.
+The X axis shows output power and the Y axis shows efficiency. The red dashed line is the identified model's typical catalog efficiency, not a certification limit. The graph has a fixed height, while the results table scrolls independently. Download the CSV report from this section.
 
-## Ölçüm ve regulation hesapları
+## Measurement and regulation calculations
 
-### Güç ve verim
+### Power and efficiency
 
 ```text
-Pin       = giriş kanallarında Σ(V × I)
-Pout      = Vout × Iout
-Verim (%) = 100 × Pout / Pin
-Kayıp (W) = max(0, Pin − Pout)
+Pin            = Σ(V × I) across input channels
+Pout           = Vout × Iout
+Efficiency (%) = 100 × Pout / Pin
+Loss (W)       = max(0, Pin − Pout)
 ```
 
-Normal telemetride verim `Pin > 0,5 W` ve `Iout > 50 mA` olduğunda gösterilir, aksi durumda 0'dır. Görsel verim 0–100% arasında sınırlanır. Prob/yüksüz ölçümünde 0% tek başına arıza değildir. Verimlilik taraması kendi ortalama güçlerinden ayrıca verim hesaplar.
+Normal telemetry displays efficiency when `Pin > 0.5 W` and `Iout > 50 mA`; otherwise it displays 0. Displayed efficiency is clamped to 0–100%. A 0% reading during a probe or no-load measurement does not by itself indicate a fault. The efficiency sweep calculates its own efficiency from averaged power measurements.
 
-Termal sınıflar sıcaklık sensöründen gelmez; hesaplanan güç kaybına dayalı görsel göstergelerdir.
+Thermal classes do not come from a temperature sensor; they are visual indicators based on calculated power loss.
 
 ### Load regulation
 
-Her giriş noktasındaki yüksüz/tam yük farkı:
+The no-load/full-load voltage difference at each input condition:
 
 ```text
 ΔVload = abs(Vout_no_load − Vout_full_load)
 Load regulation (%) = 100 × ΔVload / Vout_catalog_nominal
 ```
 
-Minimum, nominal ve maksimum giriş için ayrı üç sonuç üretilir.
+Three separate results are produced: one each for minimum, nominal, and maximum input voltage.
 
 ### Line regulation
 
-Aynı yükte üç giriş noktasındaki çıkış gerilimlerinin aralığı:
+The output-voltage range across the three input conditions at a fixed load:
 
 ```text
 ΔVline = max(Vout_minVin, Vout_nomVin, Vout_maxVin)
@@ -260,131 +263,131 @@ Aynı yükte üç giriş noktasındaki çıkış gerilimlerinin aralığı:
 Line regulation (%) = 100 × ΔVline / Vout_catalog_nominal
 ```
 
-Yüksüz/tam yük için ayrı iki sonuç vardır. Yüzdelerin paydası katalog nominal çıkışıdır; farklı veri sayfalarıyla karşılaştırırken tanımların aynı olduğuna bakın.
+Two separate results are produced: no load and full load. Percentages use catalog nominal output voltage as the denominator; ensure that definitions match when comparing against other datasheets.
 
-Giriş/yük koşulu doğrulanmamış veya tam yük noktası atlanmışsa sonuç **boş** kalır; sıfır regülasyon yazılmaz. Uygun çift çıkışlı modellerde raylar arası toplam gerilim `catalog_output_span_v()` ile eşleştirme ve referansta kullanılır.
+If an input/load condition is not verified or a full-load point is skipped, the result remains **blank** rather than being reported as zero regulation. For applicable dual-output models, `catalog_output_span_v()` uses the total rail-to-rail voltage for matching and the reference value.
 
-## Excel ve CSV raporları
+## Excel and CSV reports
 
-### Modül testi: ZIP içinde XLSX
+### Module test: XLSX files inside a ZIP archive
 
-START TEST tamamlanınca `ozak_power_module_test_results.zip` otomatik indirilir. Her yuva için `slot_<yuva>_<model>.xlsx` içerir:
+When START TEST completes, the browser automatically downloads `ozak_power_module_test_results.zip`. It contains `slot_<slot>_<model>.xlsx` files:
 
-| Sayfa | İçerik |
+| Worksheet | Contents |
 |---|---|
-| `Summary` | Zaman, watt ailesi, yuva/model, 10/24 V ölçümleri, altı performans noktası, durum ve atlama nedenleri |
-| `Raw Samples` | Her noktanın Vin, Iin, Pin, Vout, Iout, Pout, verim örnekleri ve doğrulamaları |
-| `Regulation` | Tanımlar, referans gerilim, üç load / iki line regulation sonucu, volt farkı, yüzde ve geçerlilik |
+| `Summary` | Time, power family, slot/model, 10/24 V measurements, six performance points, status, and reasons for skipped points |
+| `Raw Samples` | Vin, Iin, Pin, Vout, Iout, Pout, efficiency samples, and verification flags for each point |
+| `Regulation` | Definitions, reference voltage, three load-regulation and two line-regulation results, voltage differences, percentages, and validity |
 
-`/api/module/export-excel` bellekteki son raporu dışa aktarır. Tek yuva testi veya verimlilik ön-belirlemesi de bunu değiştirebilir; her rapor beş yuva içermez. Sunucu yeniden başlayınca rapor kaybolur; üretim kayıtlarını ayrıca saklayın.
+`/api/module/export-excel` exports the latest report held in memory. A single-slot test or efficiency pre-identification can also replace it, so not every report contains five slots. Restarting the server clears the report; save production records separately.
 
-### Verimlilik taraması: CSV
+### Efficiency sweep: CSV
 
-`/api/sweep/export-csv`; model/katalog hedefi, adım, hedef watt/akım, gerçek güçler, gerilimler, akımlar, verim, kayıp ve kararlılık aralığını içerir. Noktalar `SweepEngine` belleğindedir.
+`/api/sweep/export-csv` includes the model/catalog target, step, target power/current, measured power, voltage, current, efficiency, loss, and stability range. Points are held in `SweepEngine` memory.
 
-## Kalibrasyon
+## Calibration
 
-Varsayılan kapalı panel yuva kablo/PCB gerilim farkını iki farklı yük noktasında modellemek için kullanılır.
+The collapsed-by-default panel models slot-specific cable/PCB voltage differences at two load points.
 
-1. Yuvayı ve uygun katalog modelini seçin.
-2. Düşük yük A ve daha yüksek yük B akımlarını girin.
-3. Her noktayı uygulayın; PSU/yük terminal ölçümleri kaydedilir.
-4. Multimetreyle doğrudan modül pinlerinden Vin/Vout ölçüp girin.
-5. Kaydedin; PSU/yük kapanır ve röle bırakılır. İptal ve 3 dakika hareketsizlik de kapatır.
+1. Select the slot and appropriate catalog model.
+2. Enter a lower current for point A and a higher current for point B.
+3. Apply each point; PSU/load terminal measurements are recorded.
+4. Measure Vin/Vout directly at the module pins with a multimeter and enter the values.
+5. Save; the PSU/load are disabled and the relay is released. Canceling, or 3 minutes of inactivity, also shuts the outputs down.
 
-İki noktalı düzeltme modeli:
+The two-point correction model is:
 
 ```text
 Vin_DUT  = Vin_PSU  − (input_offset + Iin × input_resistance)
 Vout_DUT = Vout_load + (output_offset + Iout × output_resistance)
 ```
 
-Profiller `backend/slot_calibrations.json` dosyasında kalıcı tutulur ve bu bench'in yedeği olarak Git deposunda saklanır. Dosyada her yuvanın A/B ham ölçümleri, giriş/çıkış gerilim ofsetleri, eşdeğer kablo/PCB dirençleri ve kalibrasyon zamanı bulunur. Başka bir bench'e kurulumda bu katsayıları doğrudan geçerli kabul etmeyin; o bench'i yeniden kalibre edin. Dosya yoksa boş profille başlanır. Capture akışı seçili katalog modelinin nominal girişini kullanır; paneldeki 24 V açıklaması farklı nominal modeller için sabit bir garanti değildir.
+Profiles persist in `backend/slot_calibrations.json`, which is tracked in Git as a backup of this bench's calibration. It contains each slot's raw A/B measurements, input/output voltage offsets, equivalent cable/PCB resistances, and calibration timestamp. Do not assume these coefficients apply to a different bench; calibrate that bench separately. If the file is missing, empty profiles are used. Capture uses the selected catalog model's nominal input; the panel's 24 V description is not a fixed guarantee for models with another nominal input.
 
-UTL8511 bağlantısında yerel sense seçilir (`set_remote_sense(False)`). Bazı görsel “4-Wire” etiketleri remote sense'in etkin olduğunu kanıtlamaz; fiziksel bağlantı ve cihaz ayarı ayrıca doğrulanır. Tare, küçük pozitif artık akımı ölçümden çıkaran ayrı bir düzeltmedir.
+The UTL8511 connection selects local sensing (`set_remote_sense(False)`). Some “4-Wire” interface labels do not prove that remote sensing is enabled; verify the physical connection and instrument settings separately. Tare is a separate correction that subtracts a small positive residual current from the reading.
 
-## Kod mimarisi
+## Code architecture
 
 ```text
-main.py                       Uvicorn başlangıcı
-run.bat                       Windows başlangıcı
-requirements.txt              Python bağımlılıkları
-platformio.ini                Arduino Uno yapılandırması
+main.py                       Uvicorn entry point
+run.bat                       Windows launcher
+requirements.txt              Python dependencies
+platformio.ini                Arduino Uno configuration
 backend/
-  server.py                   REST, test akışları/kilitler, XLSX/ZIP
-  engine.py                   Telemetri, modlar, yayın, kalibrasyon uygulama
-  config.py                   Portlar, örnekleme ve üst sınırlar
-  dut_catalog.py              Model, güç, gerilim, akım ve verim kataloğu
-  math_engine.py              Telemetri şemaları ve hesaplar
-  sweep_engine.py             Watt adımlı tarama ve CSV
-  simulator.py                Sanal dönüştürücü
-  slot_calibration.py         İki noktalı kalibrasyon ve kalıcı profiller
-  drivers/base_driver.py      Seri port/SCPI ve sayısal yanıt çözümleme
-  hal/utl8511_load.py          Aktif yük sürücüsü, ayar geri okuma
-  hal/drivers/unit_udp6731.py  Aktif PSU sürücüsü
-  hal/relay_selector.py       Arduino komutları ve onay denetimi
-  hal/base_*.py               Donanım arayüzleri
-  hal/mock_psu.py             Alternatif mock PSU
+  server.py                   REST, test workflows/locks, XLSX/ZIP
+  engine.py                   Telemetry, modes, broadcasting, calibration application
+  config.py                   Ports, sampling, and upper limits
+  dut_catalog.py              Model, power, voltage, current, and efficiency catalog
+  math_engine.py              Telemetry schemas and calculations
+  sweep_engine.py             Power-stepped sweep and CSV
+  simulator.py                Virtual converter
+  slot_calibration.py         Two-point calibration and persistent profiles
+  drivers/base_driver.py      Serial/SCPI communication and numeric response parsing
+  hal/utl8511_load.py          Active load driver and setting readback
+  hal/drivers/unit_udp6731.py  Active PSU driver
+  hal/relay_selector.py       Arduino commands and acknowledgement checks
+  hal/base_*.py               Hardware interfaces
+  hal/mock_psu.py             Alternative mock PSU
 frontend/
-  index.html                  Sayfa ve paneller
-  css/styles.css              Ek stiller
-  js/app.js                   API/WebSocket, modlar ve etkileşimler
-  js/gauge.js                 Verim kadranı
-  js/trend_chart.js           Canlı trend / modül testi gösterimi
-  js/sweep_chart.js           Watt–verim grafiği
-  js/showcase.js              Kullanıcı tarafından açılan vitrin
-  assets/                     Logo ve örnek ekranlar
+  index.html                  Page structure and panels
+  css/styles.css              Additional styles
+  js/app.js                   API/WebSocket, modes, and interactions
+  js/gauge.js                 Efficiency gauge
+  js/trend_chart.js           Live trend / module-test display
+  js/sweep_chart.js           Power–efficiency graph
+  js/showcase.js              User-activated showcase
+  assets/                     Logos and example screenshots
 arduino/relay_selector/
-  relay_selector.ino          Beş yuva röle firmware'i
+  relay_selector.ino          Five-slot relay firmware
 ```
 
-Alternatif/eski cihaz sürücüleri de bulunur. Aktif nesneler `TelemetryManager.__init__()` içinde seçilir; her sürücü aynı anda kullanılmaz.
+Alternative/legacy instrument drivers are also included. Active instances are selected in `TelemetryManager.__init__()`; the drivers are not all used simultaneously.
 
-### Veri akışı
+### Data flow
 
-1. FastAPI yaşam döngüsü `MANAGER.start()` ile arka plan görevini başlatır.
-2. `_telemetry_loop()` cihazları okur veya simülasyon üretir.
-3. Yuva kalibrasyonu uygulanır; `MathEngine` güç/verimi hesaplar.
-4. `broadcast()`, aktif yuva ve test durumu ekleyip `/ws/telemetry` üzerinden yollar.
-5. `app.js` ölçüleri, renkleri, kadranı ve grafikleri günceller.
-6. Testte `is_sweep_active` normal döngüyü duraklatır; `acquire_and_broadcast()` test örneklerini yayınlar.
+1. The FastAPI lifecycle starts the background task through `MANAGER.start()`.
+2. `_telemetry_loop()` reads instruments or generates simulation data.
+3. Slot calibration is applied, and `MathEngine` calculates power/efficiency.
+4. `broadcast()` adds active-slot and test-state information and sends it over `/ws/telemetry`.
+5. `app.js` updates measurements, slot colors, the gauge, and charts.
+6. During a test, `is_sweep_active` pauses the normal loop; `acquire_and_broadcast()` publishes test samples.
 
-Gerçek yayın aralığı seri sorgu sürelerine de bağlıdır; 250 ms ayarı garantili 4 Hz ölçüm hızı değildir.
+The actual update interval also depends on serial query durations; a 250 ms setting does not guarantee a 4 Hz measurement rate.
 
 ## API
 
-Sunucu açıkken **http://localhost:8000/docs** etkileşimli FastAPI şemasını gösterir.
+With the server running, **http://localhost:8000/docs** provides the interactive FastAPI schema.
 
-| Yöntem | Yol | İşlev |
+| Method | Path | Purpose |
 |---|---|---|
-| GET | `/api/status` | Mod, bağlantılar, çıkışlar ve aktif yuva |
-| GET | `/api/ports` | Seri port listesi |
-| POST | `/api/ports/ensure` | Cihaz kimliği / yeniden keşif |
-| POST | `/api/ports/configure` | Çalışma anındaki port ayarları |
+| GET | `/api/status` | Mode, connections, outputs, and active slot |
+| GET | `/api/ports` | Serial port list |
+| POST | `/api/ports/ensure` | Instrument identification / rediscovery |
+| POST | `/api/ports/configure` | Runtime port settings |
 | POST | `/api/mode` | `SIMULATION` / `HARDWARE` |
-| GET | `/api/dut/catalog` | Katalog ve aktif model |
-| POST | `/api/dut/select` | Model seçimi; testte engellenir |
-| POST | `/api/psu/state` | Manuel PSU / yuva açma-kapatma |
-| POST | `/api/psu/voltage` | Gerilim ayarı; tek başına açmaz |
-| POST | `/api/load/state` | Yük açma/kapatma |
-| POST | `/api/load/current` | CC akım hedefi |
-| POST | `/api/load/tare` | Akım ofseti düzeltme |
-| POST | `/api/module/detect` | Beş yuva belirleme ve performans testi |
-| POST | `/api/module/test-slot` | Aynı prosedürün tek yuva sürümü |
-| GET | `/api/module/export-excel` | Son raporun XLSX/ZIP çıktısı |
-| POST | `/api/sweep/start` | Belirleme ve watt adımlı tarama |
-| POST | `/api/sweep/stop` | Tarama iptal/kapatma |
-| GET | `/api/sweep/status` | Noktalar, ilerleme ve model |
-| GET | `/api/sweep/export-csv` | CSV |
-| GET | `/api/telemetry/latest` | Son telemetri karesi |
-| POST | `/api/emergency-stop` | Test iptali / çıkış-röle kapatma |
-| GET | `/api/calibration/slots` | Kalibrasyon profilleri |
-| POST | `/api/calibration/capture` | A/B noktası uygulama |
-| POST | `/api/calibration/slot/save` | Kaydetme ve kapatma |
-| POST | `/api/calibration/cancel` | Kalibrasyon iptali |
-| WS | `/ws/telemetry` | Canlı ölçüm yayını |
+| GET | `/api/dut/catalog` | Catalog and active model |
+| POST | `/api/dut/select` | Model selection; blocked during testing |
+| POST | `/api/psu/state` | Manual PSU / slot power control |
+| POST | `/api/psu/voltage` | Voltage programming without enabling output |
+| POST | `/api/load/state` | Load enable/disable |
+| POST | `/api/load/current` | CC current target |
+| POST | `/api/load/tare` | Current-offset correction |
+| POST | `/api/module/detect` | Five-slot identification and performance testing |
+| POST | `/api/module/test-slot` | Single-slot version of the same procedure |
+| GET | `/api/module/export-excel` | XLSX/ZIP export of the latest report |
+| POST | `/api/sweep/start` | Identification and power-stepped sweep |
+| POST | `/api/sweep/stop` | Sweep cancellation/shutdown |
+| GET | `/api/sweep/status` | Points, progress, and model |
+| GET | `/api/sweep/export-csv` | CSV export |
+| GET | `/api/telemetry/latest` | Latest telemetry frame |
+| POST | `/api/emergency-stop` | Test cancellation / output and relay shutdown |
+| GET | `/api/calibration/slots` | Calibration profiles |
+| POST | `/api/calibration/capture` | Apply an A/B calibration point |
+| POST | `/api/calibration/slot/save` | Save and shut down |
+| POST | `/api/calibration/cancel` | Cancel calibration |
+| WS | `/ws/telemetry` | Live measurement stream |
 
-Verimlilik taraması gövdesi:
+Efficiency sweep request body:
 
 ```json
 {
@@ -397,58 +400,58 @@ Verimlilik taraması gövdesi:
 }
 ```
 
-Tek yuva testi gövdesi:
+Single-slot test request body:
 
 ```json
 { "slot": 3, "rated_power_w": 20 }
 ```
 
-`/api/module/detect` watt ailesini sunucudaki seçili modelden alır. Arayüz START TEST öncesinde watt alanına göre bu aileyi seçer.
+`/api/module/detect` obtains the power family from the model selected on the server. Before START TEST, the interface selects that family according to the power field.
 
-Doğrudan SCPI debug ve ek kalibrasyon uçları da vardır. Kimlik doğrulama yoktur; CORS geniş ve varsayılan `HOST` tüm arayüzlerdir. Bu sürüm kontrollü bench ağı içindir; internet yayını veya çok kullanıcılı üretim yetkilendirmesi sağlamaz.
+Direct SCPI debug endpoints and additional calibration endpoints are also available. The API has no authentication, CORS is permissive, and the default `HOST` listens on all interfaces. This version is intended for a controlled bench network; it does not provide internet-facing deployment security or multi-user production authorization.
 
-## Sorun giderme ve mevcut sınırlar
+## Troubleshooting and current limitations
 
-| Belirti | Kontrol |
+| Symptom | Check |
 |---|---|
-| Sayfa açılmıyor | `main.py` çıktısı, paketler ve 8000 portunu kullanan başka süreç |
-| COM yok | USB/adaptör, sürücü, `serial.tools.list_ports` |
-| COM var ama yanıt yok | Cihazın açık olması, kimlik-port eşleşmesi, baud, portu kullanan başka program |
-| Windows aygıt hatası | USB/adaptörü yeniden bağlayın; numara değiştirmek yeterli olmayabilir |
-| GİRİŞ açılmıyor | Arduino onayı, yuva, cihaz bağlantıları, test/kalibrasyon veya acil stop kilidi |
-| Yük açık ama akım yok | Hedef akım, modül çıkışı, bağlantı ve 10 V'ta çalışabilme durumu |
-| Model belirsiz | Watt ailesi, gerçek çıkış ve birden fazla katalog eşleşmesi |
-| Regulation boş | Eksik/atlanan nokta, doğrulanmamış giriş veya oluşmayan yük |
-| 300 W test tamamlanmıyor | 30 A yük, düşük Vin'de 12 A PSU sınırı ve gerçek cihaz kapasitesi |
-| Verim %0 | Prob/yüksüz gösterim eşiği veya çıkışın kapalı olması |
-| Arayüz eski | `Ctrl+F5`; Python değiştiyse sunucuyu yeniden başlatın |
+| Page does not open | `main.py` output, installed packages, and other processes using port 8000 |
+| COM port missing | USB/adapter, driver, and `serial.tools.list_ports` output |
+| COM port exists but does not respond | Instrument power, identity-to-port mapping, baud rate, and other programs using the port |
+| Windows device error | Reconnect the USB device/adapter; changing the port number may not resolve it |
+| Input cannot be enabled | Arduino acknowledgement, selected slot, instrument connections, test/calibration locks, or emergency-stop latch |
+| Load enabled but no current | Current target, module output, wiring, and whether the module can operate at 10 V |
+| Ambiguous model | Power family, actual output voltage, and multiple catalog matches |
+| Blank regulation result | Missing/skipped point, unverified input, or target load not achieved |
+| 300 W test cannot complete | 30 A load limit, 12 A PSU limit at low Vin, and actual instrument capacity |
+| Efficiency is 0% | Probe/no-load display threshold or disabled output |
+| Interface appears outdated | `Ctrl+F5`; restart the server after Python changes |
 
-Mevcut sınırlar:
+Current limitations:
 
-- Seri numarası, operatör kimliği, veritabanı veya kalıcı test geçmişi tutulmaz.
-- 3 W modeller katalogda olsa da standart otomatik seçim 20/50/100/300 W'tır. 2,5 V eşiği ve 10/24 V yöntemi bütün dönüştürücüler için genel bir test değildir.
-- PSU sürücüsü küçük/eksik akım yanıtında yük gücünden tahmini giriş akımı/gücü üretebilir. Raporlanan verim her durumda bağımsız giriş güç ölçümüne dayanmayabilir. Metrologik doğrulama için fallback kaldırılmalı veya açıkça işaretlenmelidir.
-- Görsel sense/termal etiketleri cihaz ayarını veya gerçek sıcaklığı her zaman temsil etmez.
-- Regulation yüzdeleri tanımlanan formüllerle hesaplanır; katalog regulation limitine göre ayrı otomatik geçer/kalır kararı verilmez.
-- NumPy `requirements.txt` içinde değildir. Ayrıca kuruluysa isteğe bağlı kayıp modeli regresyonu hesaplanabilir; yoksa bu alan boş kalır.
-- Depoda kalıcı otomatik test paketi yoktur. Sözdizimi kontrolü gerçek donanım testi değildir:
+- The application does not store serial numbers, operator identities, a database, or persistent test history.
+- Although the catalog contains 3 W models, standard automatic selection supports 20/50/100/300 W. The 2.5 V threshold and 10/24 V identification procedure are not universal tests for every converter.
+- For small or missing current readings, the PSU driver may estimate input current/power from load power. Reported efficiency may therefore not always rely on an independent input-power measurement. For metrological validation, remove this fallback or explicitly flag its use.
+- Visual sensing/thermal labels do not always represent instrument settings or actual temperature.
+- Regulation percentages use the documented formulas; there is no separate automatic regulation pass/fail decision against catalog regulation limits.
+- NumPy is not listed in `requirements.txt`. If installed separately, optional loss-model regression can be calculated; otherwise that field remains empty.
+- The repository does not contain a persistent automated test suite. A syntax check is not a hardware test:
 
 ```powershell
 python -m compileall -q main.py backend
 ```
 
-## Git'e alınmayan yerel dosyalar
+## Local files excluded from Git
 
-`.gitignore`; önbellek, sanal ortam, PlatformIO yerel çekirdeği/derlemeleri, loglar, indirilen raporlar ve geçici kalibrasyon yazma dosyasını dışarıda bırakır. `backend/slot_calibrations.json` ise bu bench'in kalibrasyon yedeği olarak takip edilir; yeni kalibrasyondan sonra değişikliği commit/push ederek yedeği güncelleyin.
+`.gitignore` excludes caches, virtual environments, local PlatformIO tools/builds, logs, downloaded reports, and the temporary calibration-write file. `backend/slot_calibrations.json` is tracked as a backup of this bench's calibration; commit and push changes after recalibration to update the backup.
 
-### Önbelleklerde ne bulunur?
+### What do the caches contain?
 
-| Klasör | İçerik | Yeniden üretilebilir mi? |
+| Directory | Contents | Can it be regenerated? |
 |---|---|---|
-| `__pycache__/`, `backend/**/__pycache__/` | Python'un kaynak modüllerden derlediği `.pyc` bytecode; CPython sürümüne göre ayrı dosyalar | Evet, Python tekrar oluşturur. Kalibrasyon veya test geçmişi değildir. |
-| `.pio/build/` | Arduino derleme nesneleri, firmware çıktıları ve derleme ara dosyaları | Evet, firmware derlemesiyle |
-| `.platformio-core/.cache/` | PlatformIO indirme/çözümleme önbellekleri | Evet, gerektiğinde indirilir |
-| `.platformio-core/packages/` | İndirilen derleyici, framework ve yükleme araçları | Evet, PlatformIO ile |
-| `.platformio-core/platforms/` | Platform tanımları ve derleme/yükleme betikleri | Evet, PlatformIO ile |
+| `__pycache__/`, `backend/**/__pycache__/` | `.pyc` bytecode compiled from Python source modules, with separate files for different CPython versions | Yes, Python recreates it. It is not calibration data or test history. |
+| `.pio/build/` | Arduino object files, firmware output, and intermediate build files | Yes, by rebuilding the firmware |
+| `.platformio-core/.cache/` | PlatformIO download/resolution caches | Yes, downloaded again as needed |
+| `.platformio-core/packages/` | Downloaded compilers, frameworks, and upload tools | Yes, through PlatformIO |
+| `.platformio-core/platforms/` | Platform definitions and build/upload scripts | Yes, through PlatformIO |
 
-`.platformio-core/appstate.json` yerel PlatformIO uygulama durumunu tutar. `bench-server.*.log` dosyaları ise önbellek değildir; sunucu çalışma mesajları, hatalar ve cihaz iletişim kayıtlarıdır. Bellekteki son test raporu/ölçüm noktaları da `.pyc` dosyalarına yazılmaz. Bunlar Excel/CSV ile ayrıca dışa aktarılır.
+`.platformio-core/appstate.json` contains local PlatformIO application state. The `bench-server.*.log` files are not caches: they contain runtime messages, errors, and instrument communication logs. In-memory test reports and measurement points are not written to `.pyc` files; export them separately as Excel/CSV.
