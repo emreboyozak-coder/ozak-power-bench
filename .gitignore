@@ -1,0 +1,32 @@
+# Python environments and caches
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Local hardware calibration and generated reports/logs
+backend/slot_calibrations.json
+backend/slot_calibrations.tmp
+*.log
+*.xlsx
+*.csv
+*.zip
+
+# PlatformIO local builds/toolchain
+.pio/
+.platformio-core/
+
+# Local credentials and settings
+.env
+.env.*
+!.env.example
+.aws/
+.codex/
+
+# Editor/OS files
+.idea/
+.vscode/
+Thumbs.db
+.DS_Store

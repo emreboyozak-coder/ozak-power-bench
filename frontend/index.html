@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="tr" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OZAK POWER - Isolated DC/DC Showroom & Efficiency Telemetry Bench</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-[#05070c] text-slate-100 h-full flex flex-col font-sans select-none overflow-x-hidden">
+
+  <!-- ================= TOP BAR (Sade, Ferah, Vitrin Modu Prestijinde Kurumsal Header) ================= -->
+  <header class="bg-[#070a12]/95 backdrop-blur-xl border-b border-rose-900/40 px-6 py-2.5 flex items-center justify-between shadow-[0_10px_35px_rgba(0,0,0,0.85)] z-30 relative">
+    
+    <!-- Sol: Logo + "OZAK POWER • DC/DC POWER SOLUTIONS" ve Slogan (Aynen Vitrin Modundaki Gibi) -->
+    <div class="flex items-center gap-4">
+      <div class="px-4 py-1.5 bg-white rounded-2xl shadow-[0_0_30px_rgba(225,29,72,0.45)] border border-rose-500/80 flex items-center justify-center">
+        <img src="assets/logo_wide.png" alt="Ozak Power" class="h-10 sm:h-12 w-auto object-contain">
+      </div>
+      <div>
+        <h1 class="text-base sm:text-lg lg:text-xl font-black tracking-wider text-white uppercase font-mono flex items-center gap-2">
+          <span>OZAK POWER</span>
+          <span class="text-rose-500">&bull; DC/DC POWER SOLUTIONS</span>
+        </h1>
+        <p class="text-xs text-slate-300 font-mono italic mt-0.5">
+          "Keep limits out!" &bull; Yerli Üretim, Yerli Tasarım, Milli Gurur!
+        </p>
+      </div>
+    </div>
+
+    <!-- Sağ: Sadece 3 Temiz Eleman (Minimal DUT, Canlı/Simülasyon Hapı, Vitrin & Tam Ekran) -->
+    <div class="flex items-center gap-3 text-xs font-mono">
+      
+      <!-- 1. İki Aşamalı Model Seçici (DUT: Güç Ailesi -> Model Çeşidi) -->
+      <div class="flex items-center gap-1.5 bg-[#0e1424] border border-slate-700/60 px-3 py-1.5 rounded-full shadow-sm">
+        <span class="text-rose-400 font-bold text-[11px]">GÜÇ:</span>
+        <select id="familySelect" onchange="onFamilyChange()" class="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer border-r border-slate-700 pr-2">
+          <option value="3W" class="bg-slate-900">3W Minyatür</option>
+          <option value="20W" class="bg-slate-900">20W Kompakt</option>
+          <option value="50W" class="bg-slate-900" selected>50W Savunma</option>
+          <option value="100W" class="bg-slate-900">100W Yüksek Güç</option>
+          <option value="300W" class="bg-slate-900">300W (Yakında)</option>
+        </select>
+        <span class="text-rose-400 font-bold text-[11px] ml-1">MODEL:</span>
+        <select id="dutSelect" onchange="onDUTChange()" class="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer max-w-[240px]">
+          <!-- Dinamik Model Varyantları Yüklenecek -->
+        </select>
+      </div>
+
+      <!-- 2. Şık [CANLI / SİMÜLASYON] Hap Butonu -->
+      <button id="modeToggleBtn" onclick="toggleSystemMode()" class="flex items-center gap-2 bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white px-3.5 py-1.5 rounded-full font-bold transition shadow-[0_0_15px_rgba(225,29,72,0.35)] text-xs border border-rose-500/60">
+        <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+        <span id="modeText">TEST MODU</span>
+        <span class="text-[10px] opacity-80">⇄ SİMÜLASYON / TEST</span>
+      </button>
+
+      <!-- 3. [VİTRİN] ve [TAM EKRAN] İkonları -->
+      <div class="flex items-center gap-1.5">
+        <button onclick="window.manualTriggerShowcase(event)" title="Ozak Power Showroom / Vitrin Modu" class="p-2 bg-[#0e1424] hover:bg-rose-950/70 border border-slate-700/60 hover:border-rose-500 rounded-full text-rose-300 transition shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+          </svg>
+        </button>
+
+        <button onclick="toggleFullScreen()" title="Tam Ekran (F11 Kiosk Modu)" class="p-2 bg-[#0e1424] hover:bg-slate-800 border border-slate-700/60 hover:border-slate-500 rounded-full text-slate-300 transition shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= İNCE, ZARİF VE FERAH SEKME (TAB) ÇİZGİSİ ================= -->
+  <nav class="flex items-center justify-center gap-8 border-b border-slate-800/70 bg-[#060911]/90 px-6 pt-1">
+    <button id="navTabBench" onclick="switchMainTab('bench')" class="text-rose-400 font-extrabold border-b-2 border-rose-500 pb-2 px-6 text-xs font-mono tracking-widest uppercase transition-all duration-200 shadow-[0_2px_12px_rgba(225,29,72,0.35)]">
+      CANLI TEST BENCH
+    </button>
+    <button id="navTabSweep" onclick="switchMainTab('sweep')" class="text-slate-400 hover:text-slate-200 border-b-2 border-transparent pb-2 px-6 text-xs font-mono tracking-widest uppercase transition-all duration-200">
+      VERİMLİLİK EĞRİSİ (SWEEP)
+    </button>
+    <button id="navTabCatalog" onclick="switchMainTab('catalog')" class="text-slate-400 hover:text-slate-200 border-b-2 border-transparent pb-2 px-6 text-xs font-mono tracking-widest uppercase transition-all duration-200">
+      ÜRÜN KATALOĞU
+    </button>
+  </nav>
+
+  <!-- ================= MAIN CONTENT VIEWPORT ================= -->
+  <main class="flex-1 p-3 lg:p-4 flex flex-col justify-between max-w-7xl mx-auto w-full">
+
+    <!-- #################### SEKME 1: CANLI TEST BENCH & TELEMETRİ #################### -->
+    <div id="tabViewBench" class="flex flex-col gap-3.5 w-full">
+      
+      <!-- Üst Satır: 3 BÜYÜK, ASİL VE FERAH BLOK (Giriş, Verimlilik, Çıkış) -->
+      <div class="grid grid-cols-12 gap-4 items-stretch">
+        
+        <!-- 1. SOL: GİRİŞ (P_in) -> Devasa rakam, altında sadece ince bir satırda "48.00V | 1.90A" -->
+        <div class="col-span-12 lg:col-span-4 glass-panel-amber rounded-3xl p-6 flex flex-col justify-between items-center text-center">
+          <div class="w-full flex items-center justify-between border-b border-amber-800/40 pb-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+              <span class="text-xs font-extrabold tracking-widest text-amber-300 uppercase font-mono">GİRİŞ GÜCÜ (P<sub>in</sub>)</span>
+            </div>
+            <!-- 3 Noktalı Dinamik Laboratuvar Voltaj Seçici (Modele Göre Min / Nom / Max) -->
+            <div id="vinPresetContainer" class="flex items-center gap-1 bg-black/50 p-1 rounded-lg border border-amber-500/30 text-[11px] font-mono relative z-20">
+              <button type="button" onclick="window.selectVinBand('min')" id="vinBandMin" class="px-2.5 py-1 rounded cursor-pointer text-slate-400 hover:text-white transition">18V Min</button>
+              <button type="button" onclick="window.selectVinBand('nom')" id="vinBandNom" class="px-2.5 py-1 rounded cursor-pointer text-amber-300 font-bold bg-amber-500/20 shadow-sm border border-amber-500/40 transition">48V Nom</button>
+              <button type="button" onclick="window.selectVinBand('max')" id="vinBandMax" class="px-2.5 py-1 rounded cursor-pointer text-slate-400 hover:text-white transition">72V Max</button>
+            </div>
+          </div>
+          
+          <div class="my-auto py-2">
+            <div class="text-4xl sm:text-5xl lg:text-6xl font-black font-mono text-amber-300 tracking-tight tabular-nums drop-shadow-[0_0_25px_rgba(245,158,11,0.35)]">
+              <span id="kioskPin">0.000</span> <span class="text-2xl font-normal text-amber-500/70">W</span>
+            </div>
+            <!-- BÜYÜTÜLMÜŞ & BELİRGİN GİRİŞ GERİLİM VE AKIM GÖSTERGESİ (3 ONDALIKLI) -->
+            <div class="mt-3 flex items-center justify-center gap-3">
+              <div class="px-3.5 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.15)] flex items-baseline gap-1.5">
+                <span class="text-[11px] uppercase font-mono font-bold text-amber-500/80">VIN</span>
+                <span id="kioskVinTop" class="text-xl sm:text-2xl font-black font-mono text-amber-300 tracking-tight drop-shadow-[0_0_10px_rgba(245,158,11,0.4)]">48.000 V</span>
+              </div>
+              <div class="px-3.5 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.15)] flex items-baseline gap-1.5">
+                <span class="text-[11px] uppercase font-mono font-bold text-amber-500/80">IIN</span>
+                <span id="kioskIinTop" class="text-xl sm:text-2xl font-black font-mono text-amber-300 tracking-tight drop-shadow-[0_0_10px_rgba(245,158,11,0.4)]">0.000 A</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-[11px] font-mono text-amber-500/80 flex items-center justify-center gap-1.5" id="psuCalibBadge">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+            <span id="psuCalibText">&bull; 48.000V UDP6731 (Canlı 4-Wire Sense & SCPI)</span>
+          </div>
+        </div>
+
+        <!-- 2. MERKEZ: VERİMLİLİK KADRANI -> Sadece büyük bir yüzde (örn: %87.5) ve altında şık tek bir satır: "Katalog: %90 | Kayıp: 1.2W" -->
+        <div class="col-span-12 lg:col-span-4 glass-panel rounded-3xl p-5 flex flex-col items-center justify-between shadow-[0_15px_40px_rgba(225,29,72,0.25)] relative overflow-hidden">
+          <div class="w-full flex items-center justify-center text-xs font-mono border-b border-rose-900/40 pb-2">
+            <span class="text-rose-400 font-extrabold uppercase tracking-widest flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+              VERİMLİLİK (%)
+            </span>
+          </div>
+
+          <!-- Kadran Görseli -->
+          <div class="relative w-56 h-56 flex items-center justify-center my-1">
+            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 280 280">
+              <defs>
+                <linearGradient id="mainEffGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#e11d48" />
+                  <stop offset="50%" stop-color="#06b6d4" />
+                  <stop offset="100%" stop-color="#10b981" />
+                </linearGradient>
+              </defs>
+
+              <!-- Dış Kılavuz Halkası (Aerospace Ticks) -->
+              <circle id="kioskOuterTrack" cx="140" cy="140" r="122" 
+                      stroke="#1a2233" 
+                      stroke-width="2" 
+                      stroke-dasharray="3, 8" 
+                      fill="transparent" />
+
+              <!-- İç Arka Plan Halkası -->
+              <circle cx="140" cy="140" r="102" 
+                      stroke="#0d1424" 
+                      stroke-width="16" 
+                      fill="transparent" />
+
+              <!-- Ana Verimlilik Neon Yayı -->
+              <circle id="kioskGaugeArc" cx="140" cy="140" r="102" 
+                      stroke="url(#mainEffGrad)" 
+                      stroke-width="16" 
+                      stroke-linecap="round" 
+                      stroke-dasharray="640.88" 
+                      stroke-dashoffset="640.88" 
+                      fill="transparent" 
+                      class="transition-all duration-300 ease-out glow-eff-hero" />
+            </svg>
+
+            <!-- Kadran İçi Sayısal Değer & Tek Şık Satır -->
+            <div class="absolute flex flex-col items-center text-center">
+              <span id="kioskEffVal" class="text-5xl lg:text-6xl font-black tracking-tight text-white font-mono drop-shadow-[0_0_20px_rgba(255,255,255,0.4)] tabular-nums">
+                0.0 %
+              </span>
+
+              <!-- Altında Şık Tek Satır: "Katalog: %90 | Kayıp: 1.2W" -->
+              <div class="mt-2 text-xs font-mono text-slate-300 flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#080d18]/90 border border-slate-800/90 shadow-inner">
+                <span>Katalog: <b id="gaugeCatTarget" class="text-slate-200 font-bold">%90</b></span>
+                <span class="text-slate-600">|</span>
+                <span>Kayıp: <b id="kioskPloss" class="text-rose-400 font-bold">0.000 W</b></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- DOM Uyumluluk Elemanları (Kalıcı Olarak Gizli) -->
+          <div style="display: none !important;">
+            <span id="gaugeDutLabel">OZP50S48SS05A</span>
+            <span id="kioskGaugeDelta"></span>
+            <span id="kioskPeakEff">0.0 %</span>
+            <span id="thermalStatusText"></span>
+            <span id="connectionDot"></span>
+            <span id="connectionStatusText"></span>
+          </div>
+
+          <div class="text-[11px] font-mono text-slate-500">
+            Gerçek Zamanlı Kalibre Telemetri
+          </div>
+        </div>
+
+        <!-- 3. SAĞ: ÇIKIŞ (P_out) -> Devasa yeşil rakam, altında ince bir satırda "5.00V | 10.0A" -->
+        <div class="col-span-12 lg:col-span-4 glass-panel-emerald rounded-3xl p-6 flex flex-col justify-between items-center text-center">
+          <div class="w-full flex items-center justify-center border-b border-emerald-800/40 pb-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              <span class="text-xs font-extrabold tracking-widest text-emerald-300 uppercase font-mono">ÇIKIŞ GÜCÜ (P<sub>out</sub>)</span>
+            </div>
+          </div>
+          
+          <div class="my-auto py-2">
+            <div class="text-4xl sm:text-5xl lg:text-6xl font-black font-mono text-emerald-400 tracking-tight tabular-nums drop-shadow-[0_0_25px_rgba(16,185,129,0.35)]">
+              <span id="kioskPout">0.000</span> <span class="text-2xl font-normal text-emerald-500/70">W</span>
+            </div>
+            <!-- BÜYÜTÜLMÜŞ & BELİRGİN ÇIKIŞ GERİLİM VE AKIM GÖSTERGESİ (3 ONDALIKLI) -->
+            <div class="mt-3 flex items-center justify-center gap-3">
+              <div class="px-3.5 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.15)] flex items-baseline gap-1.5">
+                <span class="text-[11px] uppercase font-mono font-bold text-emerald-400/80">VOUT</span>
+                <span id="kioskVout" class="text-xl sm:text-2xl font-black font-mono text-emerald-300 tracking-tight drop-shadow-[0_0_10px_rgba(16,185,129,0.4)]">5.000 V</span>
+              </div>
+              <div class="px-3.5 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.15)] flex items-baseline gap-1.5">
+                <span class="text-[11px] uppercase font-mono font-bold text-emerald-400/80">IOUT</span>
+                <span id="kioskIout" class="text-xl sm:text-2xl font-black font-mono text-emerald-300 tracking-tight drop-shadow-[0_0_10px_rgba(16,185,129,0.4)]">0.000 A</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-[11px] font-mono text-slate-500" id="kioskLoadStatusText">
+            4-Wire Kelvin Sense &bull; UTL8511 (COM6)
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Alt Satır 1: YATAY, İNCE VE MİNİMAL GİRİŞ/ÇIKIŞ VE AKIM KONTROL BARI -->
+      <div class="glass-panel rounded-2xl px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+        <!-- Sol: Bağımsız Çift Kontrol (Giriş PSU & Çıkış YÜK) -->
+        <div class="flex items-center gap-2.5">
+          <!-- PSU Giriş Butonu -->
+          <button id="btnPsuToggle" onclick="togglePsuState()" 
+            class="px-3.5 py-2 rounded-xl font-mono font-black text-xs tracking-wider uppercase transition-all duration-200 bg-amber-600 hover:bg-amber-500 text-white shadow-[0_0_15px_rgba(245,158,11,0.4)] border border-amber-400/50 flex items-center gap-2 cursor-pointer"
+            title="Giriş Güç Kaynağını (UDP6731) Aç/Kapat">
+            <span id="psuToggleDot" class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+            <span id="psuToggleText">⚡ GİRİŞ: AÇIK</span>
+          </button>
+          
+          <!-- Yük Çıkış Butonu -->
+          <button id="btnLoadToggle" onclick="toggleLoadState()" 
+            class="px-3.5 py-2 rounded-xl font-mono font-black text-xs tracking-wider uppercase transition-all duration-200 bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)] border border-emerald-400/50 flex items-center gap-2 cursor-pointer"
+            title="Elektronik Yükü (UTL8511) Aç/Kapat">
+            <span id="loadToggleDot" class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+            <span id="loadToggleText">⚡ ÇIKIŞ: AÇIK</span>
+          </button>
+        </div>
+
+        <!-- Orta: Profesyonel Hassas Akım Ayarlayıcı (-1A, -0.1A, Gösterge + Slider, +0.1A, +1A) -->
+        <div class="flex items-center gap-2.5">
+          <label for="singleModuleSlot" class="text-[10px] font-mono text-slate-400">YUVA</label>
+          <select id="singleModuleSlot" onchange="loadSlotCalibration()" class="px-2 py-2 rounded-lg bg-[#0e1424] border border-slate-700 text-cyan-200 font-mono text-xs" aria-label="Test edilecek modül yuvası">
+            <option value="1">1 / D2</option>
+            <option value="2">2 / D3</option>
+            <option value="3" selected>3 / D4</option>
+            <option value="4">4 / D5</option>
+            <option value="5">5 / D6</option>
+          </select>
+          <label for="testModulePower" class="text-[10px] font-mono text-slate-400">GÜÇ (W)</label>
+          <select id="testModulePower" aria-label="Test edilecek modülün nominal gücü (W)" class="w-24 px-2 py-2 rounded-lg bg-[#0e1424] border border-slate-700 text-cyan-200 font-mono text-xs">
+            <option value="20">20 W</option><option value="50">50 W</option>
+            <option value="100">100 W</option><option value="300">300 W</option>
+          </select>
+          <button id="btnTestSingleModule" onclick="askPowerRatingAndTestSelectedSlot()" class="px-3 py-2 rounded-xl font-mono font-black text-xs tracking-wider uppercase transition bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-500/60 cursor-pointer">TEST YUVA</button>
+          <button id="btnDetectModule" onclick="askPowerRatingAndDetect()" class="px-3.5 py-2 rounded-xl font-mono font-black text-xs tracking-wider uppercase transition bg-cyan-700 hover:bg-cyan-600 text-white border border-cyan-500/60 cursor-pointer">START TEST</button>
+          <span id="moduleDetectionResult" class="text-[11px] font-mono text-slate-400" aria-live="polite">Modül algılama bekliyor</span>
+        </div>
+        <div class="flex-1 max-w-xl flex items-center gap-2.5">
+          <!-- Eksi Adımlayıcılar -->
+          <div class="flex items-center gap-1 font-mono text-xs">
+            <button onclick="stepCurrent(-1.0)" class="px-2.5 py-1.5 rounded-lg bg-[#0e1424] hover:bg-rose-950/70 border border-slate-700 hover:border-rose-500 text-slate-200 font-bold transition cursor-pointer shadow-sm active:scale-95" title="1.0A Azalt">-1.0A</button>
+            <button onclick="stepCurrent(-0.1)" class="px-2 py-1.5 rounded-lg bg-[#0e1424] hover:bg-rose-950/70 border border-slate-700 hover:border-rose-500 text-slate-200 font-bold transition cursor-pointer shadow-sm active:scale-95" title="0.1A Azalt">-0.1A</button>
+          </div>
+
+          <!-- Canlı Akım Göstergesi ve Hassas Sürgü -->
+          <div class="flex-1 flex flex-col items-center px-2">
+            <div class="flex items-center justify-between w-full font-mono text-[11px] mb-1">
+              <span class="text-slate-400">Hedef Test Akımı:</span>
+              <span id="kioskSliderVal" class="font-extrabold text-cyan-300 text-sm tabular-nums">2.000 A</span>
+            </div>
+            <input id="kioskSlider" type="range" min="0.0" max="10.0" step="0.05" value="2.0" 
+              class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400" oninput="onSliderInput(this.value)">
+          </div>
+
+          <!-- Artı Adımlayıcılar -->
+          <div class="flex items-center gap-1 font-mono text-xs">
+            <button onclick="stepCurrent(0.1)" class="px-2 py-1.5 rounded-lg bg-[#0e1424] hover:bg-emerald-950/70 border border-slate-700 hover:border-emerald-500 text-emerald-300 font-bold transition cursor-pointer shadow-sm active:scale-95" title="0.1A Arttır">+0.1A</button>
+            <button onclick="stepCurrent(1.0)" class="px-2.5 py-1.5 rounded-lg bg-[#0e1424] hover:bg-emerald-950/70 border border-slate-700 hover:border-emerald-500 text-emerald-300 font-bold transition cursor-pointer shadow-sm active:scale-95" title="1.0A Arttır">+1.0A</button>
+          </div>
+        </div>
+
+        <!-- Sağ: SIFIRLA ve AKILLI ACİL STOP -->
+        <div class="flex items-center gap-2 font-mono text-xs">
+          <button id="btnTare" onclick="tareLoadCurrent()" 
+            class="px-3.5 py-2 rounded-xl font-bold tracking-wider uppercase transition-all duration-200 bg-[#12192a] hover:bg-slate-800 text-cyan-300 border border-cyan-800 hover:border-cyan-400 shadow-sm cursor-pointer"
+            title="Boşta bekleme artık akımını (mA) sıfırla">
+            SIFIRLA (TARE)
+          </button>
+          <button onclick="emergencyStop()" 
+            class="px-4 py-2 rounded-xl bg-gradient-to-r from-red-800 to-rose-900 hover:from-red-700 hover:to-rose-800 text-white border border-red-600 font-black tracking-wider transition shadow-[0_0_15px_rgba(225,29,72,0.4)] flex items-center gap-1.5 cursor-pointer active:scale-95"
+            title="Hem Güç Kaynağını (PSU) hem Elektronik Yükü Derhal Kapat">
+            <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
+            <span>ACİL STOP</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Alt Satır 2: 60-SANİYE CANLI TREND GRAFİĞİ -->
+      <section class="glass-panel rounded-2xl p-4 font-mono" aria-label="Aktif modül yuvası">
+        <div class="flex flex-wrap justify-between gap-2 mb-3">
+          <span class="text-xs font-bold text-slate-300">MODÜL YUVALARI</span>
+          <span id="activeSlotStatus" class="text-xs text-cyan-300" role="status">Aktif yuva yok</span>
+        </div>
+        <div class="grid grid-cols-3 gap-2 sm:gap-3 w-full max-w-sm mx-auto" aria-label="Bench module layout">
+          <div id="slotIndicator5" style="grid-row: 1; grid-column: 1;" class="aspect-square w-full flex flex-col items-center justify-center rounded-xl border border-slate-700 bg-slate-950/60 text-center text-slate-500"><span class="block text-2xl font-black">5</span><span class="text-[10px]">D6</span><span data-slot-state class="block text-[10px] mt-1">KAPALI</span></div>
+          <div id="slotIndicator4" style="grid-row: 1; grid-column: 3;" class="aspect-square w-full flex flex-col items-center justify-center rounded-xl border border-slate-700 bg-slate-950/60 text-center text-slate-500"><span class="block text-2xl font-black">4</span><span class="text-[10px]">D5</span><span data-slot-state class="block text-[10px] mt-1">KAPALI</span></div>
+          <div id="slotIndicator3" style="grid-row: 2; grid-column: 2;" class="aspect-square w-full flex flex-col items-center justify-center rounded-xl border border-slate-700 bg-slate-950/60 text-center text-slate-500"><span class="block text-2xl font-black">3</span><span class="text-[10px]">D4</span><span data-slot-state class="block text-[10px] mt-1">KAPALI</span></div>
+          <div id="slotIndicator1" style="grid-row: 3; grid-column: 1;" class="aspect-square w-full flex flex-col items-center justify-center rounded-xl border border-slate-700 bg-slate-950/60 text-center text-slate-500"><span class="block text-2xl font-black">1</span><span class="text-[10px]">D2</span><span data-slot-state class="block text-[10px] mt-1">KAPALI</span></div>
+          <div id="slotIndicator2" style="grid-row: 3; grid-column: 3;" class="aspect-square w-full flex flex-col items-center justify-center rounded-xl border border-slate-700 bg-slate-950/60 text-center text-slate-500"><span class="block text-2xl font-black">2</span><span class="text-[10px]">D3</span><span data-slot-state class="block text-[10px] mt-1">KAPALI</span></div>
+        </div>
+      </section>
+      <div id="moduleSlotResults" class="hidden glass-panel rounded-xl px-4 py-3 text-[11px] font-mono text-slate-300 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2" aria-live="polite"></div>
+      <details class="glass-panel rounded-2xl p-4 border border-cyan-900/60">
+        <summary class="cursor-pointer text-xs font-extrabold text-cyan-300 font-mono rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-400">
+          KALİBRASYON AYARLARI
+        </summary>
+        <div class="mt-3">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2 mb-3">
+          <h2 class="text-xs font-extrabold tracking-wider text-cyan-300 font-mono">YUVA BAZLI KABLO / PCB GERİLİM KALİBRASYONU</h2>
+          <span id="slotCalibrationStatus" class="text-[11px] font-mono text-slate-400" aria-live="polite">Kalibrasyon profili yükleniyor...</span>
+        </div>
+        <p class="text-[11px] leading-relaxed text-slate-400 mb-3">
+          Üstteki YUVA seçimini kullanın. Her noktada sistem seçili yuvayı 24 V nominal girişle besleyip yükü ayarlar; multimetreyle doğrudan modül giriş ve çıkış pinlerini ölçün. PSU ve yük, kayıt ya da iptal edilene kadar açık kalır; 3 dakika işlem yapılmazsa otomatik kapanır. Akım değerlerini modülün gücünü aşmayacak şekilde seçin.
+        </p>
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-3">
+          <div class="rounded-xl bg-slate-950/60 border border-slate-800 p-3">
+            <h3 class="text-[11px] font-bold text-amber-300 mb-2">ÖLÇÜM NOKTASI A · DÜŞÜK YÜK</h3>
+            <label class="text-[10px] text-slate-400">Yük akımı (A)<input id="slotCalA_current" type="number" min="0.01" step="0.01" value="0.1" class="mt-1 w-full rounded bg-[#0e1424] border border-slate-700 px-2 py-1.5 text-white"></label>
+            <button type="button" onclick="captureSlotCalibrationPoint('A')" class="mt-2 px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-200 text-[11px] font-bold">A NOKTASINI UYGULA</button>
+            <div id="slotCalA_reading" class="my-2 text-[10px] font-mono text-slate-400" aria-live="polite">Henüz ölçüm alınmadı.</div>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="text-[10px] text-slate-400">Multimetre: DUT Vin (V)<input id="slotCalA_vin_dut" type="number" min="0.001" step="0.001" class="mt-1 w-full rounded bg-[#0e1424] border border-cyan-700 px-2 py-1.5 text-white"></label>
+              <label class="text-[10px] text-slate-400">Multimetre: DUT Vout (V)<input id="slotCalA_vout_dut" type="number" min="0.001" step="0.001" class="mt-1 w-full rounded bg-[#0e1424] border border-cyan-700 px-2 py-1.5 text-white"></label>
+            </div>
+          </div>
+          <div class="rounded-xl bg-slate-950/60 border border-slate-800 p-3">
+            <h3 class="text-[11px] font-bold text-amber-300 mb-2">ÖLÇÜM NOKTASI B · DAHA YÜKSEK YÜK</h3>
+            <label class="text-[10px] text-slate-400">Yük akımı (A)<input id="slotCalB_current" type="number" min="0.01" step="0.01" value="0.3" class="mt-1 w-full rounded bg-[#0e1424] border border-slate-700 px-2 py-1.5 text-white"></label>
+            <button type="button" onclick="captureSlotCalibrationPoint('B')" class="mt-2 px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-200 text-[11px] font-bold">B NOKTASINI UYGULA</button>
+            <div id="slotCalB_reading" class="my-2 text-[10px] font-mono text-slate-400" aria-live="polite">Henüz ölçüm alınmadı.</div>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="text-[10px] text-slate-400">Multimetre: DUT Vin (V)<input id="slotCalB_vin_dut" type="number" min="0.001" step="0.001" class="mt-1 w-full rounded bg-[#0e1424] border border-cyan-700 px-2 py-1.5 text-white"></label>
+              <label class="text-[10px] text-slate-400">Multimetre: DUT Vout (V)<input id="slotCalB_vout_dut" type="number" min="0.001" step="0.001" class="mt-1 w-full rounded bg-[#0e1424] border border-cyan-700 px-2 py-1.5 text-white"></label>
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-3 mt-3">
+          <button type="button" onclick="saveSlotCalibration()" class="px-4 py-2 rounded-lg bg-cyan-700 hover:bg-cyan-600 text-white text-xs font-bold">KALİBRASYONU KAYDET VE GÜCÜ KAPAT</button>
+          <button type="button" onclick="cancelSlotCalibration()" class="px-4 py-2 rounded-lg bg-rose-900 hover:bg-rose-800 text-white text-xs font-bold">İPTAL / GÜCÜ KAPAT</button>
+          <span class="text-[10px] text-slate-500">A ve B akımları farklı olmalı; her ikisi de modül güç sınırının altında kalmalı.</span>
+        </div>
+        </div>
+      </details>
+      <div class="glass-panel-cyan rounded-2xl p-4 flex flex-col justify-between shadow-xl">
+        <div class="flex items-center justify-between border-b border-slate-800/80 pb-2 mb-2 text-xs font-mono">
+          <div class="flex items-center gap-3">
+            <span id="trendChartTitle" class="font-extrabold text-white uppercase flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+              CANLI VERİMLİLİK AKIŞI
+            </span>
+            <span id="trendLegendEfficiency" class="text-emerald-400 font-semibold">&bull; Verimlilik &eta; (Yeşil)</span>
+            <span id="trendLegendPin" class="text-amber-400 font-semibold">&bull; P<sub>in</sub> (Sarı)</span>
+            <span id="trendLegendPout" class="text-cyan-400 font-semibold">&bull; P<sub>out</sub> (Mavi)</span>
+            <span id="testChartLegend" class="hidden text-xs font-semibold"><span class="text-amber-400">Hedef g&#252;&#231;</span> &middot; <span class="text-cyan-400">&#214;l&#231;&#252;len &#231;&#305;k&#305;&#351; g&#252;c&#252;</span></span>
+          </div>
+          <span id="trendChartWindow" class="text-slate-500">60 Saniye Gerçek Zamanlı</span>
+        </div>
+
+        <div class="relative w-full h-44 lg:h-52 bg-[#070a12]/90 rounded-xl border border-slate-800/80 overflow-hidden">
+          <canvas id="kioskCanvas" class="w-full h-full block"></canvas>
+        </div>
+
+        <div class="flex justify-between items-center text-[10px] text-slate-500 font-mono mt-1.5">
+          <span>T - 60sn</span>
+          <span id="trendChartFooter" class="text-cyan-400/70 font-semibold">Zaman Serisi Kararlılık Telemetrisi</span>
+          <span>Şimdi</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- #################### SEKME 2: VERİMLİLİK EĞRİSİ (SWEEP ENGINE) #################### -->
+    <div id="tabViewSweep" class="hidden flex flex-col gap-4 w-full">
+      <div class="grid grid-cols-12 gap-4">
+        
+        <!-- Sol: Sweep Kontrol Paneli (4 Kolon) -->
+        <div class="col-span-12 lg:col-span-4 glass-panel rounded-3xl p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between border-b border-rose-900/40 pb-2.5 mb-3">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+                <span class="text-xs font-extrabold uppercase tracking-wider text-rose-400 font-mono">TARAMA PARAMETRELERİ</span>
+              </div>
+              <span id="sweepStatusBadge" class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-slate-900 text-slate-400 border border-slate-800">HAZIR</span>
+            </div>
+
+            <div class="my-3 font-mono">
+              <label for="sweepSlot" class="block text-[10px] text-slate-400 mb-1">TEST EDİLECEK YUVA</label>
+              <select id="sweepSlot" class="w-full px-3 py-2 rounded-xl bg-[#0a0f1d] border border-slate-800 text-cyan-200 text-xs">
+                <option value="1">1 / D2</option>
+                <option value="2">2 / D3</option>
+                <option value="3" selected>3 / D4</option>
+                <option value="4">4 / D5</option>
+                <option value="5">5 / D6</option>
+              </select>
+              <label for="sweepPower" class="block text-[10px] text-slate-400 mt-3 mb-1">MODÜL GÜCÜ (W)</label>
+              <select id="sweepPower" class="w-full px-3 py-2 rounded-xl bg-[#0a0f1d] border border-slate-800 text-cyan-200 text-xs">
+                <option value="20">20 W</option><option value="50">50 W</option>
+                <option value="100">100 W</option><option value="300">300 W</option>
+              </select>
+              <p class="text-[10px] text-slate-500 mt-2">Seçili yuvada 10 V / 24 V kontrolü yapılır; katalog modeli eşleşince tarama başlar.</p>
+            </div>
+
+            <!-- Parametre Kutuları -->
+            <div class="grid grid-cols-2 gap-3 text-xs font-mono my-3">
+              <div class="bg-[#0a0f1d] p-3 rounded-2xl border border-slate-800">
+                <div class="text-[10px] text-slate-400">Başlangıç Gücü</div>
+                <div class="flex items-center gap-1 mt-1">
+                  <input id="sweepStart" type="number" step="5" value="5" min="1" max="300" class="w-full bg-transparent font-bold text-lg text-white focus:outline-none">
+                  <span class="text-slate-500">W</span>
+                </div>
+              </div>
+
+              <div class="bg-[#0a0f1d] p-3 rounded-2xl border border-slate-800">
+                <div class="text-[10px] text-slate-400">Bitiş Gücü</div>
+                <div class="flex items-center gap-1 mt-1">
+                  <input id="sweepEnd" type="number" step="5" value="20" min="1" max="300" class="w-full bg-transparent font-bold text-lg text-white focus:outline-none">
+                  <span class="text-slate-500">W</span>
+                </div>
+              </div>
+
+              <div class="bg-[#0a0f1d] p-3 rounded-2xl border border-slate-800">
+                <div class="text-[10px] text-slate-400">Güç Adımı</div>
+                <div class="flex items-center gap-1 mt-1">
+                  <input id="sweepStep" type="number" step="5" value="5" min="1" max="300" class="w-full bg-transparent font-bold text-lg text-white focus:outline-none">
+                  <span class="text-slate-500">W</span>
+                </div>
+              </div>
+
+              <div class="bg-[#0a0f1d] p-3 rounded-2xl border border-slate-800">
+                <div class="text-[10px] text-slate-400">Oturma Süresi</div>
+                <div class="flex items-center gap-1 mt-1">
+                  <input id="sweepDwell" type="number" step="0.1" value="5.0" class="w-full bg-transparent font-bold text-lg text-white focus:outline-none">
+                  <span class="text-slate-500">sn</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Standart %10 - %100 Hızlı Hazır Ayar Butonu -->
+            <button type="button" onclick="setStandardSweepPreset()" class="w-full mb-3 py-2 px-3 rounded-xl font-bold text-xs font-mono bg-gradient-to-r from-cyan-950/70 to-blue-950/70 hover:from-cyan-900 hover:to-blue-900 border border-cyan-500/40 text-cyan-300 transition flex items-center justify-center gap-2 cursor-pointer shadow-sm">
+              <span>⚡</span>
+              <span>5 / 10 / 15 / 20 W TESTİ</span>
+            </button>
+
+            <!-- İlerleme Çubuğu -->
+            <div class="space-y-1.5 my-3">
+              <div class="flex justify-between text-xs font-mono text-slate-400">
+                <span id="sweepProgressText">5 - 20 W Tarama Hazır</span>
+              </div>
+              <div class="w-full h-3 bg-slate-900 rounded-full overflow-hidden border border-slate-800 p-0.5">
+                <div id="sweepProgressBar" class="h-full bg-gradient-to-r from-rose-600 via-cyan-400 to-emerald-400 rounded-full transition-all duration-300" style="width: 0%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Aksiyon Butonları -->
+          <div class="space-y-2 pt-3 border-t border-slate-800">
+            <button id="btnStartSweep" onclick="startSweep()" class="w-full py-3 rounded-2xl font-black text-xs font-mono uppercase tracking-wider bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-[0_0_25px_rgba(225,29,72,0.45)] transition cursor-pointer">
+              ⚡ 5 - 20 W VERİMLİLİK TARAMASINI BAŞLAT
+            </button>
+            <button id="btnStopSweep" onclick="stopSweep()" class="hidden w-full py-3 rounded-2xl font-black text-xs font-mono uppercase tracking-wider bg-slate-800 hover:bg-slate-700 text-rose-300 border border-rose-800 transition cursor-pointer">
+              TARAMAYI DURDUR
+            </button>
+            <button onclick="exportSweepCSV()" class="w-full py-2.5 rounded-2xl font-bold text-xs font-mono text-cyan-300 bg-[#0e1526] hover:bg-[#151f38] border border-cyan-800/60 transition flex items-center justify-center gap-2 cursor-pointer">
+              <span>📥</span>
+              <span>TEST RAPORUNU CSV OLARAK İNDİR</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Sağ: Sweep Karakteristik Verimlilik Eğrisi (8 Kolon) -->
+        <div class="col-span-12 lg:col-span-8 glass-panel-cyan rounded-3xl p-5 flex flex-col min-w-0 shadow-xl">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-2 text-xs font-mono">
+            <span class="text-white font-extrabold uppercase flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+              OZAK POWER VERİMLİLİK EĞRİSİ (W)
+            </span>
+            <span class="text-rose-400 font-bold">Kırmızı Kesikli Çizgi = Katalog Nominal Hedefi</span>
+          </div>
+
+
+          <div id="sweepDetectedModel" class="min-h-6 mb-2 text-xs font-mono font-bold text-cyan-300" role="status">Modül henüz belirlenmedi.</div>
+          <div class="relative w-full h-64 min-h-64 shrink-0 bg-[#070a12]/90 rounded-2xl border border-slate-800 overflow-hidden">
+            <canvas id="sweepCanvas" class="w-full h-full block"></canvas>
+          </div>
+
+          <!-- Son Ölçülen Adımlar Mini Tablosu -->
+          <div class="mt-3 h-64 shrink-0 overflow-auto">
+            <table class="w-full text-left text-xs font-mono">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400 text-[10px]">
+                  <th class="py-1 px-2">ADIM</th>
+                  <th class="py-1 px-2">% YÜK</th>
+                  <th class="py-1 px-2">HEDEF (W)</th>
+                  <th class="py-1 px-2">YÜK (I)</th>
+                  <th class="py-1 px-2">V_OUT</th>
+                  <th class="py-1 px-2">P_IN</th>
+                  <th class="py-1 px-2">P_OUT</th>
+                  <th class="py-1 px-2">VERİMLİLİK</th>
+                  <th class="py-1 px-2">KAYIP</th>
+                  <th class="py-1 px-2">KARARLILIK</th>
+                </tr>
+              </thead>
+              <tbody id="sweepTableBody">
+                <tr class="text-slate-500 text-center">
+                  <td colspan="10" class="py-3">Tarama başladığında kararlı ölçüm değerleri burada listelenecektir.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- #################### SEKME 3: OZAK POWER ÜRÜN KATALOĞU & SHOWROOM #################### -->
+    <div id="tabViewCatalog" class="hidden flex flex-col gap-4 w-full">
+      
+      <!-- Showroom Üst Başlık & Açıklama -->
+      <div class="glass-panel rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-3">
+            <span class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-rose-950 border border-rose-700 text-rose-300 uppercase">
+              SAVUNMA & ENDÜSTRİYEL GÜÇ SİSTEMLERİ
+            </span>
+            <span class="text-xs font-mono text-slate-400">Türkiye'de Tasarlandı ve Üretildi</span>
+          </div>
+          <h2 class="text-2xl lg:text-3xl font-black text-white font-mono tracking-tight mt-2">
+            OZAK POWER İZOLE DC/DC DÖNÜŞTÜRÜCÜ AİLESİ
+          </h2>
+          <p class="text-slate-300 text-xs lg:text-sm font-sans max-w-3xl mt-1">
+            Geniş giriş gerilim aralıkları, yüksek galvanik izolasyon, kompakt gövde ve zorlu askeri/endüstriyel standartlara uyumlu yerli güç elektroniği çözümleri.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <div class="text-right font-mono text-xs text-slate-400 hidden sm:block">
+            <div class="text-white font-bold">OZAK POWER TEKNOLOJİ A.Ş.</div>
+            <div>www.ozakpower.com</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5 Ürün Serisi Fuar Kartları Grid (Küçükten Büyüğe: 3W -> 20W -> 50W -> 100W -> 300W) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        
+        <!-- 1. 3W Ultra Minyatür Serisi -->
+        <div class="glass-panel rounded-3xl p-4 flex flex-col justify-between hover:border-rose-500 transition-all duration-300">
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-[10px] font-mono font-bold bg-rose-950/80 text-rose-300 border border-rose-800 px-2 py-0.5 rounded-full">3W MİNYATÜR</span>
+              <span class="text-xs font-mono font-black text-emerald-400">Typ. %78.8</span>
+            </div>
+            <h3 class="text-base font-black text-white font-mono mb-1">OZP3S09SS05</h3>
+            <p class="text-[11px] text-slate-400 mb-3">Mikrodenetleyici & RS-485 / CAN-Bus İzolasyonu</p>
+            
+            <div class="space-y-1 bg-[#090d18] p-2.5 rounded-xl border border-slate-800 text-[11px] font-mono mb-3">
+              <div class="flex justify-between"><span class="text-slate-400">Giriş:</span><b class="text-white">3–18 VDC (9V Nom)</b></div>
+              <div class="flex justify-between"><span class="text-slate-400">Çıkış:</span><b class="text-cyan-300">5 VDC / 600mA</b></div>
+              <div class="flex justify-between"><span class="text-slate-400">İzolasyon:</span><b class="text-slate-300">1500 VDC</b></div>
+            </div>
+          </div>
+          <button onclick="selectCatalogDUT('OZP3S09SS05', '3W')" class="w-full py-2 rounded-xl text-xs font-mono font-extrabold bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-md transition cursor-pointer">
+            BU MODELİ TEST ET
+          </button>
+        </div>
+
+        <!-- 2. 20W Kompakt İzole Serisi -->
+        <div class="glass-panel rounded-3xl p-4 flex flex-col justify-between hover:border-rose-500 transition-all duration-300">
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-[10px] font-mono font-bold bg-rose-950/80 text-rose-300 border border-rose-800 px-2 py-0.5 rounded-full">20W SERİSİ</span>
+              <span class="text-xs font-mono font-black text-emerald-400">Typ. %89</span>
+            </div>
+            <h3 class="text-base font-black text-white font-mono mb-1">OZP20S48SS05A</h3>
+            <p class="text-[11px] text-slate-400 mb-3">Hassas Analog Sensör & Minyatür Haberleşme</p>
+            
+            <div class="space-y-1 bg-[#090d18] p-2.5 rounded-xl border border-slate-800 text-[11px] font-mono mb-3">
+              <div class="flex justify-between"><span class="text-slate-400">Giriş:</span><b class="text-white">18–72 VDC (48V Nom)</b></div>
+              <div class="flex justify-between"><span class="text-slate-400">Çıkış:</span><b class="text-cyan-300">5 VDC / 4A</b></div>
+              <div class="flex justify-between"><span class="text-slate-400">İzolasyon:</span><b class="text-slate-300">1500 VDC</b></div>
+            </div>
+          </div>
+          <button onclick="selectCatalogDUT('OZP20S48SS05A', '20W')" class="w-full py-2 rounded-xl text-xs font-mono font-extrabold bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-md transition cursor-pointer">
+            BU MODELİ TEST ET
+          </button>
+        </div>
+
+        <!-- 3. 50W Endüstriyel & Savunma Serisi -->
+        <div class="glass-panel rounded-3xl p-4 flex flex-col justify-between hover:border-rose-500 transition-all duration-300 ring-1 ring-rose-500/40">
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-[10px] font-mono font-bold bg-rose-950/80 text-rose-300 border border-rose-800 px-2 py-0.5 rounded-full">50W SERİSİ (BENCH)</span>
+              <span class="text-xs font-mono font-black text-emerald-400">Typ. %90</span>
+            </div>
+            <h3 class="text-base font-black text-white font-mono mb-1">OZP50S48SS05A</h3>
+            <p class="text-[11px] text-slate-400 mb-3">Savunma Sanayii & Robotik Sistemler İçin Optimize</p>
+            
+            <div class="space-y-1 bg-[#090d18] p-2.5 rounded-xl border border-slate-800 text-[11px] font-mono mb-3">
+              <div class="flex justify-between"><span class="text-slate-400">Giriş:</span><b class="text-white">18–72 VDC (48V Nom)</b></div>
+              <div class="flex justify-between"><span class="text-slate-400">Çıkış:</span><b class="text-cyan-300">5 VDC / 10A</b></div>
+              <div class="flex justify-between"><span class="text-slate-400">İzolasyon:</span><b class="text-slate-300">1500 VDC</b></div>
+            </div>
+          </div>
+          <button onclick="selectCatalogDUT('OZP50S48SS05A', '50W')" class="w-full py-2 rounded-xl text-xs font-mono font-extrabold bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-md transition cursor-pointer">
+            BU MODELİ TEST ET
+          </button>
+        </div>
+
+        <!-- 4. 100W Yüksek Güçlü Seri -->
+        <div class="glass-panel rounded-3xl p-4 flex flex-col justify-between hover:border-rose-500 transition-all duration-300">
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-[10px] font-mono font-bold bg-rose-950/80 text-rose-300 border border-rose-800 px-2 py-0.5 rounded-full">100W SERİSİ</span>
+              <span class="text-xs font-mono font-black text-emerald-400">Typ. %92</span>
+            </div>
+            <h3 class="text-base font-black text-white font-mono mb-1">OZP100S48SS05A</h3>
+            <p class="text-[11px] text-slate-400 mb-3">Yüksek Güç Yoğunluğu & Kompakt Alüminyum Gövde</p>
+            
+            <div class="space-y-1 bg-[#090d18] p-2.5 rounded-xl border border-slate-800 text-[11px] font-mono mb-3">
+              <div class="flex justify-between"><span class="text-slate-400">Giriş:</span><b class="text-white">18–72 VDC (48V Nom)</b></div>
+              <div class="flex justify-between"><span class="text-slate-400">Çıkış:</span><b class="text-cyan-300">5 VDC / 20A</b></div>
+              <div class="flex justify-between"><span class="text-slate-400">İzolasyon:</span><b class="text-slate-300">1500 VDC</b></div>
+            </div>
+          </div>
+          <button onclick="selectCatalogDUT('OZP100S48SS05A', '100W')" class="w-full py-2 rounded-xl text-xs font-mono font-extrabold bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-md transition cursor-pointer">
+            BU MODELİ TEST ET
+          </button>
+        </div>
+
+        <!-- 5. 300W Ağır Hizmet Serisi (Yakında / Pasif) -->
+        <div class="glass-panel rounded-3xl p-4 flex flex-col justify-between border-amber-800/40 relative overflow-hidden opacity-90">
+          <div class="absolute -right-12 top-6 bg-gradient-to-r from-amber-600 to-orange-600 text-white text-[9px] font-mono font-extrabold py-0.5 px-12 rotate-45 shadow-md">
+            YAKINDA
+          </div>
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-[10px] font-mono font-bold bg-amber-950/80 text-amber-300 border border-amber-700/60 px-2 py-0.5 rounded-full">300W HEAVY DUTY</span>
+              <span class="text-xs font-mono font-black text-amber-400">Typ. %91</span>
+            </div>
+            <h3 class="text-base font-black text-white font-mono mb-1">OZP300S48SS05A</h3>
+            <p class="text-[11px] text-slate-400 mb-3">60A Yüksek Akım, Ağır Hizmet ve Hibrit Güç</p>
+            
+            <div class="space-y-1 bg-[#090d18] p-2.5 rounded-xl border border-slate-800 text-[11px] font-mono mb-3">
+              <div class="flex justify-between"><span class="text-slate-400">Giriş:</span><b class="text-white">18–72 VDC (48V Nom)</b></div>
+              <div class="flex justify-between"><span class="text-slate-400">Çıkış:</span><b class="text-cyan-300">5 VDC / 60A</b></div>
+              <div class="flex justify-between"><span class="text-slate-400">İzolasyon:</span><b class="text-slate-300">1500 VDC</b></div>
+            </div>
+          </div>
+          <button disabled class="w-full py-2 rounded-xl text-xs font-mono font-bold bg-slate-800/70 border border-slate-700 text-slate-400 cursor-not-allowed flex items-center justify-center gap-1.5 shadow-inner">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+            <span>ÇOK YAKINDA (AR-GE)</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Broşür Kurumsal Vurgu Altlığı -->
+      <div class="glass-panel rounded-3xl p-4 flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-slate-400">
+        <div class="flex items-center gap-3">
+          <span class="text-rose-400 font-extrabold italic">"Keep limits out!"</span>
+          <span>&bull;</span>
+          <span>Designed and Manufactured in Türkiye</span>
+          <span>&bull;</span>
+          <span>Giriş-Çıkış Galvanik İzolasyon & Termal Koruma</span>
+        </div>
+        <div>
+          <span class="text-slate-300 font-bold">Ozak Power Teknoloji A.Ş.</span> &bull; Tel: (0212) 875 04 57
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ================= FUAR VİTRİN / EKRAN KORUYUCU (ATTRACT MODAL) ================= -->
+  <div id="showcaseOverlay" class="fixed inset-0 bg-[#04060b]/95 backdrop-blur-2xl z-50 hidden flex-col justify-between p-8 select-none transition-all duration-500">
+    
+    <!-- Vitrin Üst Bar -->
+    <div class="flex items-center justify-between border-b border-rose-900/60 pb-4">
+      <div class="flex items-center gap-5">
+        <div class="px-5 py-2.5 bg-white rounded-2xl shadow-[0_0_35px_rgba(225,29,72,0.5)] border border-rose-500/80">
+          <img src="assets/logo_wide.png" alt="Ozak Power" class="h-14 lg:h-16 w-auto object-contain">
+        </div>
+        <div>
+          <h2 class="text-2xl font-black tracking-wider text-white uppercase font-mono">
+            OZAK POWER <span class="text-rose-500">&bull; DC/DC POWER SOLUTIONS</span>
+          </h2>
+          <p class="text-sm text-slate-300 font-mono italic mt-0.5">
+            "Keep limits out!" &bull; Yerli Üretim, Yerli Tasarım, Milli Gurur!
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span class="px-4 py-1.5 rounded-full bg-rose-950 border border-rose-700 text-rose-300 font-mono text-xs font-bold animate-pulse shadow-[0_0_15px_rgba(225,29,72,0.3)]">
+          FUAR SHOWROOM VİTRİNİ
+        </span>
+        <button onclick="window.hideShowcase(event)" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-mono text-xs font-bold transition shadow-md">
+          CANLI TESTE DÖN ✕
+        </button>
+      </div>
+    </div>
+
+    <!-- Vitrin Merkez Hero: Ürün Kartı Animasyonu & Oklar -->
+    <div class="max-w-5xl mx-auto w-full my-auto py-4 relative flex items-center">
+      
+      <!-- Önceki Slayt Oku -->
+      <button onclick="window.prevShowcaseSlide(event)" class="p-3 bg-[#0d1322]/80 hover:bg-rose-900/60 text-slate-300 hover:text-white rounded-2xl border border-slate-700/60 mr-4 transition shadow-lg">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </button>
+
+      <div class="flex-1 glass-panel rounded-3xl p-8 shadow-[0_20px_50px_rgba(225,29,72,0.35)] relative overflow-hidden">
+        
+        <div class="flex items-center justify-between mb-4">
+          <span id="scTag" class="px-3.5 py-1 rounded-full text-xs font-mono font-extrabold bg-rose-600 text-white uppercase tracking-wider shadow-md">
+            SAVUNMA & HAVACILIK STANDARDI
+          </span>
+          <span class="text-xs font-mono text-slate-400">Türkiye'de Tasarlandı ve Üretildi</span>
+        </div>
+
+        <h3 id="scSeriesTitle" class="text-3xl lg:text-4xl font-black text-white font-mono tracking-tight mb-3">
+          50W ISOLATED DC-DC SERIES
+        </h3>
+
+        <p id="scDesc" class="text-slate-300 text-sm lg:text-base leading-relaxed mb-6 font-sans max-w-3xl">
+          Zorlu çevresel koşullar, düşük EMI ve yüksek izolasyon gerektiren savunma sanayii ve endüstriyel sistemler için optimize edilmiştir.
+        </p>
+
+        <!-- Öne Çıkan Özellik Tablosu -->
+        <div class="grid grid-cols-4 gap-4 font-mono text-center mb-6">
+          <div class="bg-[#080d16]/90 p-4 rounded-2xl border border-slate-800">
+            <div class="text-xs text-slate-400 mb-1">ÇIKIŞ GÜCÜ</div>
+            <div id="scPower" class="text-3xl font-black text-rose-400">50W</div>
+          </div>
+          <div class="bg-[#080d16]/90 p-4 rounded-2xl border border-slate-800">
+            <div class="text-xs text-slate-400 mb-1">GİRİŞ GERİLİMİ</div>
+            <div id="scVin" class="text-xl font-bold text-white mt-1">18–72 VDC</div>
+          </div>
+          <div class="bg-[#080d16]/90 p-4 rounded-2xl border border-slate-800">
+            <div class="text-xs text-slate-400 mb-1">ÇIKIŞ SEÇENEKLERİ</div>
+            <div id="scVout" class="text-lg font-bold text-cyan-300 mt-1">3.3V, 5V, 12V, 24V</div>
+          </div>
+          <div class="bg-[#080d16]/90 p-4 rounded-2xl border border-slate-800">
+            <div class="text-xs text-slate-400 mb-1">TEPE VERİMLİLİK</div>
+            <div id="scEff" class="text-3xl font-black text-emerald-400">Typ. %90</div>
+          </div>
+        </div>
+
+        <!-- Navigasyon Noktaları -->
+        <div id="scDots" class="flex justify-center items-center gap-2 mt-4">
+          <!-- JS dinamik doldurur -->
+        </div>
+
+      </div>
+
+      <!-- Sonraki Slayt Oku -->
+      <button onclick="window.nextShowcaseSlide(event)" class="p-3 bg-[#0d1322]/80 hover:bg-rose-900/60 text-slate-300 hover:text-white rounded-2xl border border-slate-700/60 ml-4 transition shadow-lg">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </button>
+
+    </div>
+
+    <!-- Vitrin Alt Bar: Dokunun / Başlayın Çağrısı -->
+    <div class="flex items-center justify-between border-t border-slate-800/80 pt-4 text-xs font-mono text-slate-400">
+      <div class="flex items-center gap-3">
+        <span class="text-white font-bold">OZAK POWER TEKNOLOJİ A.Ş.</span>
+        <span>&bull;</span>
+        <span>www.ozakpower.com</span>
+      </div>
+
+      <button onclick="window.hideShowcase(event)" class="flex items-center gap-2 text-rose-400 font-extrabold text-sm tracking-wider animate-bounce hover:text-rose-300 cursor-pointer">
+        <span>👆</span>
+        <span>CANLI TESTE BAŞLAMAK İÇİN TIKLAYIN / EKRANA DOKUNUN</span>
+      </button>
+
+      <div>
+        <span>Fuar Showroom Sistemi v3.1</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Uygulama Betikleri (Cache-Busting Versiyonlu) -->
+  <script src="js/gauge.js?v=20260923_1455"></script>
+  <script src="js/trend_chart.js?v=20260923_1455"></script>
+  <script src="js/sweep_chart.js?v=20260923_1455"></script>
+  <script src="js/showcase.js?v=20260923_1455"></script>
+  <script src="js/app.js?v=20260923_1455"></script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+/* OZAK POWER - Executive Dark Tech Theme & Glassmorphism Styles */
+
+:root {
+  --ozak-red: #e11d48;
+  --ozak-crimson: #dc2626;
+  --ozak-cyan: #06b6d4;
+  --ozak-emerald: #10b981;
+  --ozak-amber: #f59e0b;
+}
+
+body {
+  background-color: #05070c;
+  background-image: 
+    radial-gradient(circle at 50% -12%, rgba(225, 29, 72, 0.22), transparent 52%),
+    radial-gradient(circle at 85% 15%, rgba(6, 182, 212, 0.08), transparent 45%),
+    radial-gradient(circle at 15% 75%, rgba(225, 29, 72, 0.06), transparent 50%);
+  background-attachment: fixed;
+}
+
+/* Glassmorphism Panel Kartları */
+.glass-panel {
+  background: rgba(11, 16, 28, 0.72);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(225, 29, 72, 0.22);
+  box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel:hover {
+  border-color: rgba(225, 29, 72, 0.45);
+  box-shadow: 0 20px 45px -5px rgba(225, 29, 72, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.glass-panel-cyan {
+  background: rgba(11, 16, 28, 0.72);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(6, 182, 212, 0.25);
+  box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel-cyan:hover {
+  border-color: rgba(6, 182, 212, 0.5);
+  box-shadow: 0 20px 45px -5px rgba(6, 182, 212, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.glass-panel-amber {
+  background: rgba(11, 16, 28, 0.72);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel-emerald {
+  background: rgba(11, 16, 28, 0.72);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Neon Işıltı Efektleri */
+.glow-crimson {
+  box-shadow: 0 0 30px rgba(225, 29, 72, 0.35);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 25px rgba(6, 182, 212, 0.3);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.3);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sayısal Değerlerin Boyut Sabitliği & Fontlar */
+@keyframes pulse-crimson {
+  0%, 100% {
+    filter: drop-shadow(0 0 15px rgba(225, 29, 72, 0.45));
+  }
+  50% {
+    filter: drop-shadow(0 0 30px rgba(225, 29, 72, 0.85));
+  }
+}
+
+.glow-eff-hero {
+  animation: pulse-crimson 2.5s infinite ease-in-out;
+}
+
+/* Özel İnce Kaydırma Çubuğu */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #06080d;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e2638;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #e11d48;
+}
+
+/* Range Slider Custom Dark Tech Styling */
+input[type=range] {
+  -webkit-appearance: none;
+  background: #101726;
+  border-radius: 9999px;
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #e11d48;
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(225, 29, 72, 0.8);
+  border: 2px solid #ffffff;
+  transition: all 0.15s ease-in-out;
+}
+input[type=range]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 20px rgba(225, 29, 72, 1);
+}
