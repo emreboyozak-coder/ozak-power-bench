@@ -1,0 +1,157 @@
+{
+  "1": {
+    "input_drop_offset_v": 0.0,
+    "input_resistance_ohm": 0.0,
+    "output_gain_offset_v": 0.031,
+    "output_resistance_ohm": 0.142,
+    "calibrated_at": "2026-11-06T08:01:16+00:00",
+    "points": [
+      {
+        "iin_a": 0.472,
+        "vin_source_v": 24.0,
+        "iout_a": 2.0,
+        "vout_load_v": 4.725,
+        "output_current_target_a": 2.0,
+        "vin_dut_v": 24.0,
+        "vout_dut_v": 5.04,
+        "vin_drop_v": 0.0,
+        "vout_gain_v": 0.3150000000000004
+      },
+      {
+        "iin_a": 0.928,
+        "vin_source_v": 24.0,
+        "iout_a": 4.0,
+        "vout_load_v": 4.431,
+        "output_current_target_a": 4.0,
+        "vin_dut_v": 24.0,
+        "vout_dut_v": 5.03,
+        "vin_drop_v": 0.0,
+        "vout_gain_v": 0.5990000000000002
+      }
+    ]
+  },
+  "2": {
+    "input_drop_offset_v": 0.0,
+    "input_resistance_ohm": 0.0,
+    "output_gain_offset_v": 0.055,
+    "output_resistance_ohm": 0.128,
+    "calibrated_at": "2026-11-06T08:04:53+00:00",
+    "points": [
+      {
+        "iin_a": 0.472,
+        "vin_source_v": 24.0,
+        "iout_a": 2.0,
+        "vout_load_v": 4.729,
+        "output_current_target_a": 2.0,
+        "vin_dut_v": 24.0,
+        "vout_dut_v": 5.04,
+        "vin_drop_v": 0.0,
+        "vout_gain_v": 0.31099999999999994
+      },
+      {
+        "iin_a": 0.928,
+        "vin_source_v": 24.0,
+        "iout_a": 4.0,
+        "vout_load_v": 4.463,
+        "output_current_target_a": 4.0,
+        "vin_dut_v": 24.0,
+        "vout_dut_v": 5.03,
+        "vin_drop_v": 0.0,
+        "vout_gain_v": 0.5670000000000002
+      }
+    ]
+  },
+  "3": {
+    "input_drop_offset_v": 0.0,
+    "input_resistance_ohm": 0.0,
+    "output_gain_offset_v": 0.029,
+    "output_resistance_ohm": 0.1305,
+    "calibrated_at": "2026-11-06T08:06:25+00:00",
+    "points": [
+      {
+        "iin_a": 0.472,
+        "vin_source_v": 24.0,
+        "iout_a": 2.0,
+        "vout_load_v": 4.75,
+        "output_current_target_a": 2.0,
+        "vin_dut_v": 24.0,
+        "vout_dut_v": 5.04,
+        "vin_drop_v": 0.0,
+        "vout_gain_v": 0.29000000000000004
+      },
+      {
+        "iin_a": 0.929,
+        "vin_source_v": 24.0,
+        "iout_a": 4.0,
+        "vout_load_v": 4.479,
+        "output_current_target_a": 4.0,
+        "vin_dut_v": 24.0,
+        "vout_dut_v": 5.03,
+        "vin_drop_v": 0.0,
+        "vout_gain_v": 0.5510000000000002
+      }
+    ]
+  },
+  "4": {
+    "input_drop_offset_v": 0.0,
+    "input_resistance_ohm": 0.0,
+    "output_gain_offset_v": 0.02,
+    "output_resistance_ohm": 0.111,
+    "calibrated_at": "2026-11-06T08:07:59+00:00",
+    "points": [
+      {
+        "iin_a": 0.472,
+        "vin_source_v": 24.0,
+        "iout_a": 2.0,
+        "vout_load_v": 4.798,
+        "output_current_target_a": 2.0,
+        "vin_dut_v": 24.0,
+        "vout_dut_v": 5.04,
+        "vin_drop_v": 0.0,
+        "vout_gain_v": 0.242
+      },
+      {
+        "iin_a": 0.929,
+        "vin_source_v": 24.0,
+        "iout_a": 4.0,
+        "vout_load_v": 4.576,
+        "output_current_target_a": 4.0,
+        "vin_dut_v": 24.0,
+        "vout_dut_v": 5.04,
+        "vin_drop_v": 0.0,
+        "vout_gain_v": 0.4640000000000004
+      }
+    ]
+  },
+  "5": {
+    "input_drop_offset_v": 0.0,
+    "input_resistance_ohm": 0.0,
+    "output_gain_offset_v": 0.023,
+    "output_resistance_ohm": 0.114,
+    "calibrated_at": "2026-11-06T08:09:19+00:00",
+    "points": [
+      {
+        "iin_a": 0.472,
+        "vin_source_v": 24.0,
+        "iout_a": 2.0,
+        "vout_load_v": 4.789,
+        "output_current_target_a": 2.0,
+        "vin_dut_v": 24.0,
+        "vout_dut_v": 5.04,
+        "vin_drop_v": 0.0,
+        "vout_gain_v": 0.25100000000000033
+      },
+      {
+        "iin_a": 0.93,
+        "vin_source_v": 24.0,
+        "iout_a": 4.0,
+        "vout_load_v": 4.561,
+        "output_current_target_a": 4.0,
+        "vin_dut_v": 24.0,
+        "vout_dut_v": 5.04,
+        "vin_drop_v": 0.0,
+        "vout_gain_v": 0.4790000000000001
+      }
+    ]
+  }
+}

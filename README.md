@@ -299,7 +299,7 @@ Vin_DUT  = Vin_PSU  − (input_offset + Iin × input_resistance)
 Vout_DUT = Vout_load + (output_offset + Iout × output_resistance)
 ```
 
-Profiller `backend/slot_calibrations.json` dosyasında kalıcı tutulur. Bench'e özgü bu dosya Git'e dahil edilmez; yeni kurulum boş profille başlar. Capture akışı seçili katalog modelinin nominal girişini kullanır; paneldeki 24 V açıklaması farklı nominal modeller için sabit bir garanti değildir.
+Profiller `backend/slot_calibrations.json` dosyasında kalıcı tutulur ve bu bench'in yedeği olarak Git deposunda saklanır. Dosyada her yuvanın A/B ham ölçümleri, giriş/çıkış gerilim ofsetleri, eşdeğer kablo/PCB dirençleri ve kalibrasyon zamanı bulunur. Başka bir bench'e kurulumda bu katsayıları doğrudan geçerli kabul etmeyin; o bench'i yeniden kalibre edin. Dosya yoksa boş profille başlanır. Capture akışı seçili katalog modelinin nominal girişini kullanır; paneldeki 24 V açıklaması farklı nominal modeller için sabit bir garanti değildir.
 
 UTL8511 bağlantısında yerel sense seçilir (`set_remote_sense(False)`). Bazı görsel “4-Wire” etiketleri remote sense'in etkin olduğunu kanıtlamaz; fiziksel bağlantı ve cihaz ayarı ayrıca doğrulanır. Tare, küçük pozitif artık akımı ölçümden çıkaran ayrı bir düzeltmedir.
 
@@ -439,4 +439,16 @@ python -m compileall -q main.py backend
 
 ## Git'e alınmayan yerel dosyalar
 
-`.gitignore`; önbellek, sanal ortam, PlatformIO yerel çekirdeği/derlemeleri, loglar, indirilen raporlar ve bench'e özgü kalibrasyonu dışarıda bırakır. `backend/slot_calibrations.json` dosyasını ayrıca yedekleyin; yoksa boş profille başlanır.
+`.gitignore`; önbellek, sanal ortam, PlatformIO yerel çekirdeği/derlemeleri, loglar, indirilen raporlar ve geçici kalibrasyon yazma dosyasını dışarıda bırakır. `backend/slot_calibrations.json` ise bu bench'in kalibrasyon yedeği olarak takip edilir; yeni kalibrasyondan sonra değişikliği commit/push ederek yedeği güncelleyin.
+
+### Önbelleklerde ne bulunur?
+
+| Klasör | İçerik | Yeniden üretilebilir mi? |
+|---|---|---|
+| `__pycache__/`, `backend/**/__pycache__/` | Python'un kaynak modüllerden derlediği `.pyc` bytecode; CPython sürümüne göre ayrı dosyalar | Evet, Python tekrar oluşturur. Kalibrasyon veya test geçmişi değildir. |
+| `.pio/build/` | Arduino derleme nesneleri, firmware çıktıları ve derleme ara dosyaları | Evet, firmware derlemesiyle |
+| `.platformio-core/.cache/` | PlatformIO indirme/çözümleme önbellekleri | Evet, gerektiğinde indirilir |
+| `.platformio-core/packages/` | İndirilen derleyici, framework ve yükleme araçları | Evet, PlatformIO ile |
+| `.platformio-core/platforms/` | Platform tanımları ve derleme/yükleme betikleri | Evet, PlatformIO ile |
+
+`.platformio-core/appstate.json` yerel PlatformIO uygulama durumunu tutar. `bench-server.*.log` dosyaları ise önbellek değildir; sunucu çalışma mesajları, hatalar ve cihaz iletişim kayıtlarıdır. Bellekteki son test raporu/ölçüm noktaları da `.pyc` dosyalarına yazılmaz. Bunlar Excel/CSV ile ayrıca dışa aktarılır.
